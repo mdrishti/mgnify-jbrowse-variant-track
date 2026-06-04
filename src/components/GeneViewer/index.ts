@@ -7,6 +7,7 @@ export type {
   GeneViewerAssemblyConfig,
   GeneViewerInitialSelection,
   GeneViewerProps,
+  GeneViewerVariantsConfig,
   GeneViewerUiConfig,
   GffBgzipSource,
 } from './types';

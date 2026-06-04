@@ -1,0 +1,4 @@
+genome_id	sequence_id	start	end	ref	alt	variant_type	variant_id	gene_id	gene_id_source	effect	allele_frequency	strain	ncbi_accession	source_pmc	project_id	experimental_condition
+BU_ATCC8492	contig_1	369979	369979	C	T	snp	peg.319:369979	peg.319	peg	missense	0.62	Bacteroides uniformis		PMC12222025	PRJEB72794	Laboratory evolution 20 days 500 uM PFOA; control DMSO
+BU_ATCC8492	contig_1	1202128	1202128	C	T	snp	peg.962:1202128		FILL_ME	peg	missense	1.0	Bacteroides uniformis		PMC12222025	PRJEB72794	Laboratory evolution 20 days 500 uM PFOA; control DMSO
+BU_ATCC8492	contig_1	4162323	4162633	.	.	inversion		FILL_ME			.	Bacteroides caccae ATCC 43185	NZ_CP022412.2	PMC10939037	PRJNA916364	mouse feces; host-associated

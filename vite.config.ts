@@ -6,7 +6,12 @@ const bgzipPlugin = () => ({
   name: 'bgzip-handler',
   configureServer(server: any) {
     server.middlewares.use((req: any, res: any, next: () => void) => {
-      if (req.url && (req.url.includes('.fa.gz') || req.url.includes('.gff.gz'))) {
+      if (
+        req.url &&
+        (req.url.includes('.fa.gz') ||
+          req.url.includes('.gff.gz') ||
+          req.url.includes('.vcf.gz'))
+      ) {
         res.setHeader('Content-Type', 'application/octet-stream');
         res.setHeader('Content-Encoding', 'identity');
       }

@@ -9,7 +9,8 @@ The GeneViewer expects **BGZF-compressed** files with indexes:
 | Asset | Required format | Index files |
 |-------|-----------------|-------------|
 | FASTA | `.fasta.gz` or `.fa.gz` (BGZF) | `.fai`, `.gzi` |
-| GFF | `.gff.bgz` (BGZF) | `.csi` |
+| GFF | `.gff.bgz` or `.gff.gz` (BGZF) | `.csi` |
+| VCF | `.vcf.gz` (BGZF) | `.tbi` (tabix) |
 
 If your files are uncompressed, see [Generating indexes](../../README.md#generating-indexes) in the main README.
 
@@ -29,6 +30,16 @@ sample-data/
         ├── *.gff.bgz              # BGZF GFF (create from .gff)
         ├── *.gff.bgz.csi          # CSI index
         └── trix/                  # Optional: JBrowse text search indexes
+└── variants/
+    └── BU_ATCC8492/
+        ├── PMC12222025_variants.vcf.gz
+        └── PMC12222025_variants.vcf.gz.tbi   # PMC12222025 lab-evolution SNPs
+```
+
+Regenerate VCF from curation template:
+
+```bash
+npm run build:sample-vcf
 ```
 
 ## Using with the demo app
@@ -47,4 +58,6 @@ VITE_GFF_CSI_URL=http://localhost:5173/sample-data/gff3_files/BU_ATCC8492/BU_ATC
 VITE_ESSENTIALITY_CSV_URL=http://localhost:5173/sample-data/essentiality/essentiality_sample.csv
 ```
 
-4. Run `npm start`.
+4. For the **variant track** demo, copy `bu.env.local` to `.env.local` at the repo root (includes `VITE_VCF_*` URLs).
+
+5. Run `npm start` and open the URL (default `http://localhost:5173`). Initial view spans `contig_1:1198000..1216000` (~18 kb) around the **peg.962** SNP cluster (~9 variants visible). Scroll left for **peg.902**.

@@ -11,6 +11,9 @@ interface ImportMetaEnv {
   readonly VITE_GFF_IX_URL?: string;
   readonly VITE_GFF_IXX_URL?: string;
   readonly VITE_GFF_META_URL?: string;
+  readonly VITE_VCF_GZ_URL?: string;
+  readonly VITE_VCF_TBI_URL?: string;
+  readonly VITE_INITIAL_LOCATION?: string;
 }
 
 interface ImportMeta {

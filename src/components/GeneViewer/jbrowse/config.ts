@@ -63,8 +63,36 @@ export function buildTracksConfig(
         ...essentialityFields,
       };
 
-  const tracks: any[] = [
-    {
+  const tracks: any[] = [];
+
+  if (props.variants?.vcfUrl && props.variants?.tbiUrl) {
+    tracks.push({
+      type: 'VariantTrack',
+      trackId: 'variants',
+      name: props.variants.name ?? 'Variants',
+      assemblyNames: [assembly.name],
+      category: ['Variants'],
+      adapter: {
+        type: 'VcfTabixAdapter',
+        vcfGzLocation: { uri: props.variants.vcfUrl },
+        index: {
+          indexType: 'TBI' as const,
+          location: { uri: props.variants.tbiUrl },
+        },
+      },
+      displays: [
+        {
+          displayId: 'variants-LinearVariantDisplay',
+          type: 'LinearVariantDisplay',
+          height: 140,
+          maxFeatureScreenDensity: 0.01,
+        },
+      ],
+      visible: true,
+    });
+  }
+
+  tracks.push({
       type: 'FeatureTrack',
       trackId: 'gene_features',
       name: annotation.name ?? 'Genes',
@@ -105,8 +133,7 @@ export function buildTracksConfig(
         },
       ],
       visible: true,
-    },
-  ];
+    });
 
   return tracks;
 }
@@ -118,10 +145,63 @@ export function buildDefaultSessionConfig(opts: {
   initialStart?: number;
   /** Pass the gene track from buildTracksConfig so session uses same displays (with JEXL color1/labels). Like METT: displays: track.displays */
   geneTrackConfig?: { trackId: string; type: string; displays: any[] };
+  variantTrackConfig?: { trackId: string; type: string; displays: any[] };
 }) {
   const start = opts.initialStart ?? 0;
   const end = Math.max(start + 1, opts.initialEnd);
   const geneTrack = opts.geneTrackConfig;
+  const variantTrack = opts.variantTrackConfig;
+
+  const sessionTracks: any[] = [
+    {
+      type: 'ReferenceSequenceTrack',
+      configuration: 'ReferenceSequenceTrack',
+      minimized: false,
+      displays: [
+        {
+          id: 'ReferenceSequenceTrack',
+          type: 'LinearReferenceSequenceDisplay',
+          height: 200,
+          showForward: true,
+          showReverse: true,
+          showTranslation: true,
+          showLabels: true,
+        },
+      ],
+    },
+  ];
+
+  if (variantTrack) {
+    sessionTracks.push({
+      id: variantTrack.trackId,
+      type: 'VariantTrack',
+      configuration: variantTrack.trackId,
+      minimized: false,
+      visible: true,
+      displays: variantTrack.displays,
+    });
+  }
+
+  sessionTracks.push({
+    id: geneTrack?.trackId ?? 'gene_features',
+    type: 'FeatureTrack',
+    configuration: geneTrack?.trackId ?? 'gene_features',
+    minimized: false,
+    visible: true,
+    displays: geneTrack?.displays ?? [
+      {
+        displayId: 'gene_features-LinearBasicDisplay',
+        id: 'gene_features-LinearBasicDisplay',
+        type: 'LinearBasicDisplay',
+        height: 280,
+        renderer: {
+          type: 'SvgFeatureRenderer',
+          color1: 'jexl:getGeneColor(feature)',
+          color2: 'jexl:getGeneColor(feature)',
+        },
+      },
+    ],
+  });
 
   return {
     name: 'Gene Viewer session',
@@ -143,45 +223,7 @@ export function buildDefaultSessionConfig(opts: {
             assemblyName: opts.assemblyName,
           },
         ],
-        tracks: [
-          {
-            type: 'ReferenceSequenceTrack',
-            configuration: 'ReferenceSequenceTrack',
-            minimized: false,
-            displays: [
-              {
-                id: 'ReferenceSequenceTrack',
-                type: 'LinearReferenceSequenceDisplay',
-                height: 200,
-                showForward: true,
-                showReverse: true,
-                showTranslation: true,
-                showLabels: true,
-              },
-            ],
-          },
-          {
-            id: geneTrack?.trackId ?? 'gene_features',
-            type: 'FeatureTrack',
-            configuration: geneTrack?.trackId ?? 'gene_features',
-            minimized: false,
-            visible: true,
-            // Use full track displays (with renderer color1 + labels JEXL) so highlight and essentiality colors apply. Match METT: displays: track.displays
-            displays: geneTrack?.displays ?? [
-              {
-                displayId: 'gene_features-LinearBasicDisplay',
-                id: 'gene_features-LinearBasicDisplay',
-                type: 'LinearBasicDisplay',
-                height: 280,
-                renderer: {
-                  type: 'SvgFeatureRenderer',
-                  color1: 'jexl:getGeneColor(feature)',
-                  color2: 'jexl:getGeneColor(feature)',
-                },
-              },
-            ],
-          },
-        ],
+        tracks: sessionTracks,
       },
     ],
   };

@@ -38,6 +38,14 @@ export interface GeneViewerAnnotationConfig {
     name?: string;
     gff: GffBgzipSource;
 }
+/** Tabix-indexed VCF (bgzip + .tbi) for VariantTrack. */
+export interface GeneViewerVariantsConfig {
+    name?: string;
+    /** BGZF-compressed VCF URL/path */
+    vcfUrl: string;
+    /** Tabix index (e.g. `.vcf.gz.tbi`) */
+    tbiUrl: string;
+}
 export interface EssentialityConfig {
     /** If true, apply essentiality coloring to the gene track. */
     enabled?: boolean;
@@ -71,6 +79,8 @@ export interface GeneViewerInitialSelection {
 export interface GeneViewerProps {
     assembly: GeneViewerAssemblyConfig;
     annotation: GeneViewerAnnotationConfig;
+    /** Optional VCF variant track (requires @jbrowse/plugin-variants at runtime). */
+    variants?: GeneViewerVariantsConfig;
     essentiality?: EssentialityConfig;
     ui?: GeneViewerUiConfig;
     initialSelection?: GeneViewerInitialSelection;

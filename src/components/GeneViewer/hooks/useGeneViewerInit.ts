@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createViewState } from '@jbrowse/react-app2';
 import makeWorkerInstance from '@jbrowse/react-app2/esm/makeWorkerInstance';
+import VariantsPlugin from '@jbrowse/plugin-variants';
 import GeneViewerJBrowsePlugin from '../jbrowse/plugin';
 import { buildDefaultSessionConfig } from '../jbrowse/config';
 import { fetchFirstFaiRef } from '../gff';
@@ -47,12 +48,14 @@ export function useGeneViewerInit(
         }
 
         const geneTrack = tracksConfig.find((t: any) => t.trackId === 'gene_features');
+        const variantTrack = tracksConfig.find((t: any) => t.trackId === 'variants');
         const sessionConfig = buildDefaultSessionConfig({
           assemblyName: props.assembly.name,
           initialRefName,
           initialStart,
           initialEnd,
           geneTrackConfig: geneTrack,
+          variantTrackConfig: variantTrack,
         });
 
         const config = {
@@ -61,9 +64,13 @@ export function useGeneViewerInit(
           defaultSession: { ...sessionConfig, name: 'defaultSession' },
         };
 
+        const plugins = variantTrack
+          ? [GeneViewerJBrowsePlugin, VariantsPlugin]
+          : [GeneViewerJBrowsePlugin];
+
         const state = createViewState({
           config,
-          plugins: [GeneViewerJBrowsePlugin],
+          plugins,
           makeWorkerInstance,
         });
 

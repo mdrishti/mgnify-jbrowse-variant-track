@@ -32,6 +32,11 @@ export declare function buildDefaultSessionConfig(opts: {
         type: string;
         displays: any[];
     };
+    variantTrackConfig?: {
+        trackId: string;
+        type: string;
+        displays: any[];
+    };
 }): {
     name: string;
     widgets: {
@@ -54,28 +59,6 @@ export declare function buildDefaultSessionConfig(opts: {
             end: number;
             assemblyName: string;
         }[];
-        tracks: ({
-            type: string;
-            configuration: string;
-            minimized: boolean;
-            displays: {
-                id: string;
-                type: string;
-                height: number;
-                showForward: boolean;
-                showReverse: boolean;
-                showTranslation: boolean;
-                showLabels: boolean;
-            }[];
-            id?: undefined;
-            visible?: undefined;
-        } | {
-            id: string;
-            type: string;
-            configuration: string;
-            minimized: boolean;
-            visible: boolean;
-            displays: any[];
-        })[];
+        tracks: any[];
     }[];
 };
