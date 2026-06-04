@@ -1,0 +1,31 @@
+##fileformat=VCFv4.2
+##source=MGnify-JBrowse sample (PMC12222025 B. uniformis lab evolution)
+##contig=<ID=contig_1,length=4688977>
+##contig=<ID=contig_2,length=22713>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT
+contig_1	369979	peg.319:369979	C	T	.	.	VT=snp;GENE=peg.319;EFF=missense;AF=0.6200;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1140402	peg.902:1140402	G	A	.	.	VT=snp;GENE=peg.902;EFF=missense;AF=0.0730;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1201854	peg.962:1201854	A	G	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=0.0525;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1202024	peg.962:1202024	G	A	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=1.0000;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	1202128	peg.962:1202128	C	T	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=0.1154;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	1202128	peg.962:1202128_dup	C	T	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=1.0000;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1202871	peg.962:1202871	T	C	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=1.0000;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1202871	peg.962:1202871_pfna	T	C	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=1.0000;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	1203036	peg.962:1203036_pfna	T	C	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=0.9664;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	1203036	peg.962:1203036_pfoa	T	C	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=0.9855;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1203716	peg.962:1203716	G	A	.	.	VT=snp;GENE=peg.962;EFF=missense;AF=0.9216;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	1922578	peg.1544:1922578	TGT	ATC	.	.	VT=complex;GENE=peg.1544;EFF=missense;END=1922580;AF=0.0811;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1922584	peg.1544:1922584	C	T	.	.	VT=snp;GENE=peg.1544;EFF=synonymous;AF=0.1250;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	1932347	peg.1555:1932347_a	CGGCATGC	CGGTATGA	.	.	VT=complex;GENE=peg.1555;EFF=missense;END=1932354;AF=0.0376;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1932347	peg.1555:1932347_b	CGGCATGC	TGGTATGC	.	.	VT=complex;GENE=peg.1555;EFF=missense;END=1932354;AF=0.0448;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	1940015	peg.1562:1940015	CCAG	TCAA	.	.	VT=complex;GENE=peg.1562;EFF=synonymous;END=1940018;AF=0.0657;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	2210029	peg.1783:2210029	A	G	.	.	VT=snp;GENE=peg.1783;EFF=missense;AF=0.0602;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	2927429	peg.2427:2927429	G	C	.	.	VT=snp;GENE=peg.2427;EFF=synonymous;AF=0.0687;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	2927444	peg.2427:2927444	C	T	.	.	VT=snp;GENE=peg.2427;EFF=synonymous;AF=0.0556;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	2927456	peg.2427:2927456	T	C	.	.	VT=snp;GENE=peg.2427;EFF=synonymous;AF=0.0539;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	3507723	peg.2946:3507723_ins	TA	TAA	.	.	VT=delins;GENE=peg.2946;EFF=frameshift;END=3507724;AF=0.0402;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	3507723	peg.2946:3507723_del	TA	T	.	.	VT=delins;GENE=peg.2946;EFF=frameshift;AF=0.0124;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	3823393	peg.3252:3823393_del	CA	C	.	.	VT=delins;GENE=peg.3252;EFF=frameshift;AF=0.0258;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	3823393	peg.3252:3823393_ins	CA	CAA	.	.	VT=delins;GENE=peg.3252;EFF=frameshift;END=3823394;AF=0.0258;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
+contig_1	4164529	peg.3560:4164529	G	A	.	.	VT=snp;GENE=peg.3560;EFF=synonymous;AF=0.8818;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_250_μM_PFNA;_Control_-_DMSO
+contig_1	4416500	peg.3778:4416500	C	T	.	.	VT=snp;GENE=peg.3778;EFF=missense;AF=0.0942;PMC=PMC12222025;PRJ=PRJEB72794;COND=Laboratory_evolution_for_20_days_in_500_μM_PFOA;_Control_-_DMSO
