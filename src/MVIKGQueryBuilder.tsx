@@ -19,13 +19,13 @@ const QLEVER_ENDPOINT =
 // SPARQL templates
 // ---------------------------------------------------------------------------
 
-const PREFIXES = `PREFIX biolink: <https://biolink.github.io/biolink-model/biolink/>
-PREFIX dcterms: <http://purl.org/dc/terms/>
+const PREFIXES = `PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX dcmitype: <http://purl.org/dc/dcmitype/>
+PREFIX sosa:    <http://www.w3.org/ns/sosa/>
+PREFIX biolink: <https://w3id.org/biolink/vocab/>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX obo: <http://purl.obolibrary.org/obo/>
-PREFIX MVIKG: <https://mvikg.ebi.ac.uk/>
-PREFIX MVIKGBOX: <https://mvikg.ebi.ac.uk/box/>
+PREFIX mvikg:    <https://w3id.org/mvikg#>
 `;
 
 interface Template {
@@ -33,7 +33,7 @@ interface Template {
   label: string;
   description: string;
   inputs: ("organism" | "gene")[];
-  build: (organism: string, taxonUri: string, gene: string) => string;
+  build: (organism: string, taxonUri: string, geneUri: string) => string;
 }
 
 const TEMPLATES: Template[] = [
@@ -42,67 +42,91 @@ const TEMPLATES: Template[] = [
     label: "Variants by organism + gene",
     description: "All variants involving a specific gene in a specific organism.",
     inputs: ["organism", "gene"],
-    build: (_org, taxonUri, gene) => `${PREFIXES}
-SELECT ?paper ?geneLabel ?variantLabel ?source WHERE {
-  ?sample biolink:in_taxon ${taxonUri ? `<${taxonUri}>` : "?taxon"} .
-  ?ann biolink:in_taxon ?taxon ;
-       rdf:type biolink:Gene ;
-       rdfs:label ?geneLabel .
-  FILTER(CONTAINS(LCASE(STR(?geneLabel)), LCASE("${gene}")))
-  ?rel biolink:subject ?ann ;
-       biolink:object ?variantAnn .
-  ?variantAnn rdf:type biolink:SequenceVariant ;
-              rdfs:label ?variantLabel .
-  ?doc dcterms:hasPart ?section .
-  ?section dcterms:hasPart ?ann .
-  ?doc rdfs:label ?paper .
-  OPTIONAL { ?doc dcterms:source ?source . }
+    build: (_org, taxonUri, geneUri) => `${PREFIXES}
+SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+WHERE {
+  ?article a dcmitype:Text .
+  FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
+  ?article dcterms:references ?section .
+  ?section dcterms:source ?sourceFrom ;
+  rdf:type ?sectionType .
+  ?organism dcterms:source ?section ;
+            biolink:in_taxon ?taxon .
+  ?strain a sosa:Sample ;
+          sosa:isSampleOf ?organism ;
+	  rdfs:label ?taxonLabel ;
+          sosa:hasFeatureOfInterest ?geneNode .
+  VALUES ?taxonLabel { "${taxonUri}" }
+  ?geneNode biolink:has_sequence_variant ?variant .
+  ?variant rdfs:label ?variantLabel .
+  OPTIONAL { 
+    ?geneNode dcterms:identifier ?geneURI . 
+    VALUES ?geneURI { "<${geneUri}>" }
+  }
 }
-ORDER BY ?paper ?geneLabel`,
+GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI
+ORDER BY ?article DESC(?nSampleNodes)
+`,
   },
   {
     id: "variants_by_organism",
     label: "All variants for an organism",
     description: "Every variant mentioned in papers about this organism.",
     inputs: ["organism"],
-    build: (_org, taxonUri, _gene) => `${PREFIXES}
-SELECT ?paper ?variantLabel ?geneLabel ?source WHERE {
-  ?sample biolink:in_taxon ${taxonUri ? `<${taxonUri}>` : "?taxon"} .
-  ?variantAnn rdf:type biolink:SequenceVariant ;
-              rdfs:label ?variantLabel .
-  OPTIONAL {
-    ?rel biolink:object ?variantAnn ;
-         biolink:subject ?geneAnn .
-    ?geneAnn rdf:type biolink:Gene ;
-             rdfs:label ?geneLabel .
+    build: (_org, taxonUri, _geneUri) => `${PREFIXES}
+SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+WHERE {
+  ?article a dcmitype:Text .
+  FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
+  ?article dcterms:references ?section .
+  ?section dcterms:source ?sourceFrom ;
+  rdf:type ?sectionType .
+  ?organism dcterms:source ?section ;
+            biolink:in_taxon ?taxon .
+  ?strain a sosa:Sample ;
+          sosa:isSampleOf ?organism ;
+	  rdfs:label ?taxonLabel ;
+          sosa:hasFeatureOfInterest ?geneNode .
+  VALUES ?taxonLabel { "${taxonUri}" }
+  ?geneNode biolink:has_sequence_variant ?variant .
+  ?variant rdfs:label ?variantLabel .
+  OPTIONAL { 
+    ?geneNode dcterms:identifier ?geneURI . 
   }
-  ?section dcterms:hasPart ?variantAnn .
-  ?doc dcterms:hasPart ?section ;
-       rdfs:label ?paper .
-  OPTIONAL { ?doc dcterms:source ?source . }
 }
-ORDER BY ?paper ?variantLabel`,
+GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI
+ORDER BY ?article DESC(?nSampleNodes)
+`,
   },
   {
     id: "papers_by_gene",
     label: "Papers mentioning a gene",
     description: "All papers that annotate a specific gene.",
     inputs: ["gene"],
-    build: (_org, _taxonUri, gene) => `${PREFIXES}
-SELECT DISTINCT ?paper ?taxonLabel ?source WHERE {
-  ?ann rdf:type biolink:Gene ;
-       rdfs:label ?geneLabel .
-  FILTER(CONTAINS(LCASE(STR(?geneLabel)), LCASE("${gene}")))
-  ?section dcterms:hasPart ?ann .
-  ?doc dcterms:hasPart ?section ;
-       rdfs:label ?paper .
-  OPTIONAL { ?doc dcterms:source ?source . }
-  OPTIONAL {
-    ?ann biolink:in_taxon ?taxon .
-    ?taxon rdfs:label ?taxonLabel .
+    build: (_org, _taxonUri, geneUri) => `${PREFIXES}
+SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?taxonLabel ?geneNode ?variant ?geneURI (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+WHERE {
+  ?article a dcmitype:Text .
+  FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
+  ?article dcterms:references ?section .
+  ?section dcterms:source ?sourceFrom ;
+  rdf:type ?sectionType .
+  ?organism dcterms:source ?section ;
+            biolink:in_taxon ?taxon .
+  ?strain a sosa:Sample ;
+          sosa:isSampleOf ?organism ;
+	  rdfs:label ?taxonLabel ;
+          sosa:hasFeatureOfInterest ?geneNode .
+  ?geneNode biolink:has_sequence_variant ?variant .
+  ?variant rdfs:label ?variantLabel .
+  OPTIONAL { 
+    ?geneNode dcterms:identifier ?geneURI . 
+    VALUES ?geneURI { "<${geneUri}>" }
   }
 }
-ORDER BY ?paper`,
+GROUP BY ?article ?strain ?taxon ?taxonLabel ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI
+ORDER BY ?article DESC(?nSampleNodes)
+`,
   },
   {
     id: "all_organisms",
@@ -122,9 +146,9 @@ ORDER BY DESC(?sampleCount)`,
     label: "Genes co-occurring with organism in a paper",
     description: "All genes annotated alongside this organism in the same paper.",
     inputs: ["organism"],
-    build: (_org, taxonUri, _gene) => `${PREFIXES}
+    build: (_org, taxonUri, _geneUri) => `${PREFIXES}
 SELECT ?geneLabel (COUNT(DISTINCT ?doc) AS ?paperCount) WHERE {
-  ?sample biolink:in_taxon ${taxonUri ? `<${taxonUri}>` : "?taxon"} .
+  ?sample biolink:in_taxon ${taxonUri ? `<${taxonUri}>` : "?taxonLabel"} .
   ?geneAnn rdf:type biolink:Gene ;
            rdfs:label ?geneLabel .
   ?section dcterms:hasPart ?geneAnn .
@@ -291,7 +315,7 @@ export default function MVIKGQueryBuilder() {
   const [templateId, setTemplateId] = useState(TEMPLATES[0].id);
   const [organism, setOrganism] = useState("");
   const [taxonUri, setTaxonUri] = useState("");
-  const [gene, setGene] = useState("");
+  const [geneUri, setGene] = useState("");
   const [sparql, setSparql] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -300,15 +324,15 @@ export default function MVIKGQueryBuilder() {
   const template = TEMPLATES.find((t) => t.id === templateId)!;
 
   const buildQuery = useCallback(() => {
-    const q = template.build(organism, taxonUri, gene);
+    const q = template.build(organism, taxonUri, geneUri);
     setSparql(q);
     setResults(null);
     setError(null);
-  }, [template, organism, taxonUri, gene]);
+  }, [template, organism, taxonUri, geneUri]);
 
   // Rebuild when template changes
   useEffect(() => {
-    setSparql(template.build(organism, taxonUri, gene));
+    setSparql(template.build(organism, taxonUri, geneUri));
     setResults(null);
     setError(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -377,9 +401,9 @@ export default function MVIKGQueryBuilder() {
               </label>
               <input
                 type="text"
-                value={gene}
+                value={geneUri}
                 onChange={(e) => setGene(e.target.value)}
-                placeholder="e.g. clsA"
+                placeholder="e.g. https://www.ncbi.nlm.nih.gov/gene/1252749"
                 style={inputStyle}
               />
             </>
