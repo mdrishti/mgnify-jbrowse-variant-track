@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import MVIKGViewer from "./MVIKGViewer";
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -30,11 +31,13 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+const isMVIKG = window.location.pathname.startsWith("/mvikg");
+
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      {isMVIKG ? <MVIKGViewer /> : <App />}
     </ErrorBoundary>
   </React.StrictMode>
 );
