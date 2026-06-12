@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import MVIKGViewer from "./MVIKGViewer";
+import MVIKGQueryBuilder from "./MVIKGQueryBuilder";
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -31,13 +32,19 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-const isMVIKG = window.location.pathname.startsWith("/mvikg");
+const path = window.location.pathname;
+
+function Router() {
+  if (path.startsWith("/mvikg")) return <MVIKGViewer />;
+  if (path.startsWith("/query")) return <MVIKGQueryBuilder />;
+  return <App />;
+}
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      {isMVIKG ? <MVIKGViewer /> : <App />}
+      <Router />
     </ErrorBoundary>
   </React.StrictMode>
 );
