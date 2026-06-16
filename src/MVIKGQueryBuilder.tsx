@@ -42,7 +42,7 @@ const TEMPLATES: Template[] = [
     label: "Variants by organism + gene",
     description: "All variants involving a specific gene in a specific organism.",
     inputs: ["organism", "gene"],
-    build: (_org, taxonUri, geneUri) => `${PREFIXES}
+    build: (org, _taxonUri, geneUri) => `${PREFIXES}
 SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
@@ -56,7 +56,7 @@ WHERE {
           sosa:isSampleOf ?organism ;
 	  rdfs:label ?taxonLabel ;
           sosa:hasFeatureOfInterest ?geneNode .
-  VALUES ?taxonLabel { "${taxonUri}" }
+  VALUES ?taxonLabel { "${org}" }
   ?geneNode biolink:has_sequence_variant ?variant .
   ?variant rdfs:label ?variantLabel .
   OPTIONAL {
@@ -68,7 +68,7 @@ WHERE {
   BIND(IF(BOUND(?accession),
     IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
                "&accession=", STR(?accession),
-               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
+               "&label=", STR(?taxonLabel))),
     ?taxon) AS ?jbrowseUrl)
 }
 GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
@@ -80,7 +80,7 @@ ORDER BY ?article DESC(?nSampleNodes)
     label: "All variants for an organism",
     description: "Every variant mentioned in papers about this organism.",
     inputs: ["organism"],
-    build: (_org, taxonUri, _geneUri) => `${PREFIXES}
+    build: (org, _taxonUri, _geneUri) => `${PREFIXES}
 SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
@@ -94,7 +94,7 @@ WHERE {
           sosa:isSampleOf ?organism ;
 	  rdfs:label ?taxonLabel ;
           sosa:hasFeatureOfInterest ?geneNode .
-  VALUES ?taxonLabel { "${taxonUri}" }
+  VALUES ?taxonLabel { "${org}" }
   ?geneNode biolink:has_sequence_variant ?variant .
   ?variant rdfs:label ?variantLabel .
   OPTIONAL {
@@ -105,13 +105,53 @@ WHERE {
   BIND(IF(BOUND(?accession),
     IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
                "&accession=", STR(?accession),
-               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
+               "&label=", STR(?taxonLabel))),
     ?taxon) AS ?jbrowseUrl)
 }
 GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
+  {
+    id: "structural_variants_by_organism",
+    label: "All structural variants for an organism",
+    description: "Every structural variant mentioned in papers about this organism.",
+    inputs: ["organism"],
+    build: (org, _taxonUri, _geneUri) => `${PREFIXES}
+    PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX dcmitype: <http://purl.org/dc/dcmitype/>
+PREFIX sosa:    <http://www.w3.org/ns/sosa/>
+PREFIX biolink: <https://w3id.org/biolink/vocab/>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX mvikg:    <https://w3id.org/mvikg#>
+
+SELECT ?article ?sectionType ?sourceFrom ?taxon ?varStart ?varEnd ?jbrowseUrl
+WHERE {
+  ?article a dcmitype:Text .
+  FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
+  ?article dcterms:references ?section .
+  ?section dcterms:source ?sourceFrom ;
+  rdf:type ?sectionType .
+  ?organism dcterms:source ?section ;
+            biolink:in_taxon ?taxon .
+  ?strain a sosa:Sample ;
+          sosa:isSampleOf ?organism ;
+	      rdfs:label ?taxonLabel ;
+          sosa:hasFeatureOfInterest ?geneNode .
+  VALUES ?taxonLabel { "${org}" }
+  ?geneNode biolink:has_sequence_variant ?variant .
+  ?variant biolink:start_coordinate ?varStart ;
+           biolink:end_coordinate ?varEnd .
+  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
+  BIND(IF(BOUND(?accession),
+    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
+               "&accession=", STR(?accession),
+               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
+    ?taxon) AS ?jbrowseUrl)
+}`
+},
   {
     id: "papers_by_gene",
     label: "Papers mentioning a gene",
