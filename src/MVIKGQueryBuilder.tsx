@@ -43,7 +43,7 @@ const TEMPLATES: Template[] = [
     description: "All variants involving a specific gene in a specific organism.",
     inputs: ["organism", "gene"],
     build: (_org, taxonUri, geneUri) => `${PREFIXES}
-SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
   FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
@@ -59,12 +59,19 @@ WHERE {
   VALUES ?taxonLabel { "${taxonUri}" }
   ?geneNode biolink:has_sequence_variant ?variant .
   ?variant rdfs:label ?variantLabel .
-  OPTIONAL { 
-    ?geneNode dcterms:identifier ?geneURI . 
+  OPTIONAL {
+    ?geneNode dcterms:identifier ?geneURI .
     VALUES ?geneURI { "<${geneUri}>" }
   }
+  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
+  BIND(IF(BOUND(?accession),
+    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
+               "&accession=", STR(?accession),
+               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
+    ?taxon) AS ?jbrowseUrl)
 }
-GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI
+GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
@@ -74,7 +81,7 @@ ORDER BY ?article DESC(?nSampleNodes)
     description: "Every variant mentioned in papers about this organism.",
     inputs: ["organism"],
     build: (_org, taxonUri, _geneUri) => `${PREFIXES}
-SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
   FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
@@ -90,11 +97,18 @@ WHERE {
   VALUES ?taxonLabel { "${taxonUri}" }
   ?geneNode biolink:has_sequence_variant ?variant .
   ?variant rdfs:label ?variantLabel .
-  OPTIONAL { 
-    ?geneNode dcterms:identifier ?geneURI . 
+  OPTIONAL {
+    ?geneNode dcterms:identifier ?geneURI .
   }
+  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
+  BIND(IF(BOUND(?accession),
+    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
+               "&accession=", STR(?accession),
+               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
+    ?taxon) AS ?jbrowseUrl)
 }
-GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI
+GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
@@ -104,7 +118,7 @@ ORDER BY ?article DESC(?nSampleNodes)
     description: "All papers that annotate a specific gene.",
     inputs: ["gene"],
     build: (_org, _taxonUri, geneUri) => `${PREFIXES}
-SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?taxonLabel ?geneNode ?variant ?geneURI (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?taxonLabel ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
   FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
@@ -119,12 +133,19 @@ WHERE {
           sosa:hasFeatureOfInterest ?geneNode .
   ?geneNode biolink:has_sequence_variant ?variant .
   ?variant rdfs:label ?variantLabel .
-  OPTIONAL { 
-    ?geneNode dcterms:identifier ?geneURI . 
+  OPTIONAL {
+    ?geneNode dcterms:identifier ?geneURI .
     VALUES ?geneURI { "<${geneUri}>" }
   }
+  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
+  BIND(IF(BOUND(?accession),
+    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
+               "&accession=", STR(?accession),
+               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
+    ?taxon) AS ?jbrowseUrl)
 }
-GROUP BY ?article ?strain ?taxon ?taxonLabel ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI
+GROUP BY ?article ?strain ?taxon ?taxonLabel ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
