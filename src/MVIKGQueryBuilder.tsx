@@ -11,6 +11,7 @@
 
 import "@fontsource/roboto";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import MVIKGQueryGraph from "./MVIKGQueryGraph";
 
 const QLEVER_ENDPOINT =
   (import.meta.env.VITE_QLEVER_ENDPOINT as string) || "http://localhost:7035";
@@ -43,7 +44,7 @@ const TEMPLATES: Template[] = [
     description: "All variants involving a specific gene in a specific organism.",
     inputs: ["organism", "gene"],
     build: (org, _taxonUri, geneUri) => `${PREFIXES}
-SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+SELECT ?article ?sectionType ?sourceFrom ?sample ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?sample) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
   FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
@@ -52,7 +53,7 @@ WHERE {
   rdf:type ?sectionType .
   ?organism dcterms:source ?section ;
             biolink:in_taxon ?taxon .
-  ?strain a sosa:Sample ;
+  ?sample a sosa:Sample ;
           sosa:isSampleOf ?organism ;
 	  rdfs:label ?taxonLabel ;
           sosa:hasFeatureOfInterest ?geneNode .
@@ -63,7 +64,7 @@ WHERE {
     ?geneNode dcterms:identifier ?geneURI .
     VALUES ?geneURI { "<${geneUri}>" }
   }
-  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  OPTIONAL { ?sample dcterms:identifier ?accession . }
   BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
   BIND(IF(BOUND(?accession),
     IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
@@ -71,7 +72,7 @@ WHERE {
                "&label=", STR(?taxonLabel))),
     ?taxon) AS ?jbrowseUrl)
 }
-GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
+GROUP BY ?article ?sample ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
@@ -81,7 +82,7 @@ ORDER BY ?article DESC(?nSampleNodes)
     description: "Every variant mentioned in papers about this organism.",
     inputs: ["organism"],
     build: (org, _taxonUri, _geneUri) => `${PREFIXES}
-SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+SELECT ?article ?sectionType ?sourceFrom ?sample ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?sample) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
   FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
@@ -90,7 +91,7 @@ WHERE {
   rdf:type ?sectionType .
   ?organism dcterms:source ?section ;
             biolink:in_taxon ?taxon .
-  ?strain a sosa:Sample ;
+  ?sample a sosa:Sample ;
           sosa:isSampleOf ?organism ;
 	  rdfs:label ?taxonLabel ;
           sosa:hasFeatureOfInterest ?geneNode .
@@ -100,7 +101,7 @@ WHERE {
   OPTIONAL {
     ?geneNode dcterms:identifier ?geneURI .
   }
-  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  OPTIONAL { ?sample dcterms:identifier ?accession . }
   BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
   BIND(IF(BOUND(?accession),
     IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
@@ -108,7 +109,7 @@ WHERE {
                "&label=", STR(?taxonLabel))),
     ?taxon) AS ?jbrowseUrl)
 }
-GROUP BY ?article ?strain ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
+GROUP BY ?article ?sample ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
@@ -135,7 +136,7 @@ WHERE {
   rdf:type ?sectionType .
   ?organism dcterms:source ?section ;
             biolink:in_taxon ?taxon .
-  ?strain a sosa:Sample ;
+  ?sample a sosa:Sample ;
           sosa:isSampleOf ?organism ;
 	      rdfs:label ?taxonLabel ;
           sosa:hasFeatureOfInterest ?geneNode .
@@ -143,7 +144,7 @@ WHERE {
   ?geneNode biolink:has_sequence_variant ?variant .
   ?variant biolink:start_coordinate ?varStart ;
            biolink:end_coordinate ?varEnd .
-  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  OPTIONAL { ?sample dcterms:identifier ?accession . }
   BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
   BIND(IF(BOUND(?accession),
     IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
@@ -158,7 +159,7 @@ WHERE {
     description: "All papers that annotate a specific gene.",
     inputs: ["gene"],
     build: (_org, _taxonUri, geneUri) => `${PREFIXES}
-SELECT ?article ?sectionType ?sourceFrom ?strain ?taxon ?taxonLabel ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?strain) AS ?nSampleNodes)
+SELECT ?article ?sectionType ?sourceFrom ?sample ?taxon ?taxonLabel ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?sample) AS ?nSampleNodes)
 WHERE {
   ?article a dcmitype:Text .
   FILTER(STRSTARTS(STR(?article), "https://www.ncbi.nlm.nih.gov/pmc/articles/"))
@@ -167,7 +168,7 @@ WHERE {
   rdf:type ?sectionType .
   ?organism dcterms:source ?section ;
             biolink:in_taxon ?taxon .
-  ?strain a sosa:Sample ;
+  ?sample a sosa:Sample ;
           sosa:isSampleOf ?organism ;
 	  rdfs:label ?taxonLabel ;
           sosa:hasFeatureOfInterest ?geneNode .
@@ -177,7 +178,7 @@ WHERE {
     ?geneNode dcterms:identifier ?geneURI .
     VALUES ?geneURI { "<${geneUri}>" }
   }
-  OPTIONAL { ?strain dcterms:identifier ?accession . }
+  OPTIONAL { ?sample dcterms:identifier ?accession . }
   BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
   BIND(IF(BOUND(?accession),
     IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
@@ -185,7 +186,7 @@ WHERE {
                "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
     ?taxon) AS ?jbrowseUrl)
 }
-GROUP BY ?article ?strain ?taxon ?taxonLabel ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
+GROUP BY ?article ?sample ?taxon ?taxonLabel ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
 `,
   },
@@ -509,6 +510,8 @@ export default function MVIKGQueryBuilder() {
           )}
         </div>
       </div>
+
+      <MVIKGQueryGraph templateId={templateId} organism={organism} geneUri={geneUri} />
 
       {/* ── Results ── */}
       {results && <ResultsTable vars={results.vars} rows={results.rows} />}
