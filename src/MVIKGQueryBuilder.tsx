@@ -222,6 +222,37 @@ ORDER BY DESC(?paperCount)`,
 ];
 
 // ---------------------------------------------------------------------------
+// Custom query helpers — apply graph edits to the custom SPARQL text
+// ---------------------------------------------------------------------------
+
+function renameVariableInSparql(sparql: string, oldName: string, newName: string): string {
+  // Replace ?oldName as a whole word throughout the query
+  const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return sparql.replace(new RegExp(`\\?${escaped}(?=[^a-zA-Z0-9_])`, "g"), `?${newName}`);
+}
+
+function changePredicateInSparql(sparql: string, oldPred: string, newPred: string): string {
+  const escaped = oldPred.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return sparql.replace(new RegExp(`(\\s)${escaped}(\\s)`, "g"), `$1${newPred}$2`);
+}
+
+function addTripleToSparql(sparql: string, subject: string, predicate: string, object: string): string {
+  // Insert new triple just before the closing } of WHERE { … }
+  const upper = sparql.toUpperCase();
+  const whereIdx = upper.indexOf("WHERE");
+  if (whereIdx === -1) return sparql;
+  let depth = 0;
+  let closeIdx = -1;
+  for (let i = whereIdx; i < sparql.length; i++) {
+    if (sparql[i] === "{") depth++;
+    else if (sparql[i] === "}") { depth--; if (depth === 0) { closeIdx = i; break; } }
+  }
+  if (closeIdx === -1) return sparql;
+  const line = `  ?${subject} ${predicate} ?${object} .\n`;
+  return sparql.slice(0, closeIdx) + line + sparql.slice(closeIdx);
+}
+
+// ---------------------------------------------------------------------------
 // QLever helpers
 // ---------------------------------------------------------------------------
 
@@ -379,6 +410,8 @@ export default function MVIKGQueryBuilder() {
   const [taxonUri, setTaxonUri] = useState("");
   const [geneUri, setGene] = useState("");
   const [sparql, setSparql] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
+  const [customSparql, setCustomSparql] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<{ vars: string[]; rows: Record<string, { type: string; value: string }>[] } | null>(null);
@@ -405,13 +438,37 @@ export default function MVIKGQueryBuilder() {
     setError(null);
     setResults(null);
     try {
-      const r = await runSparql(sparql);
+      const r = await runSparql(showCustom ? customSparql : sparql);
       setResults(r);
     } catch (e: any) {
       setError(String(e?.message ?? e));
     } finally {
       setRunning(false);
     }
+  };
+
+  const handleStartCustom = () => {
+    setCustomSparql(sparql);
+    setShowCustom(true);
+  };
+
+  const handleDiscardCustom = () => {
+    setShowCustom(false);
+    setCustomSparql("");
+    setResults(null);
+    setError(null);
+  };
+
+  const handleNodeRename = (oldName: string, newName: string) => {
+    setCustomSparql((prev) => renameVariableInSparql(prev, oldName, newName));
+  };
+
+  const handlePredicateChange = (oldPred: string, newPred: string) => {
+    setCustomSparql((prev) => changePredicateInSparql(prev, oldPred, newPred));
+  };
+
+  const handleAddTriple = (subject: string, predicate: string, object: string) => {
+    setCustomSparql((prev) => addTripleToSparql(prev, subject, predicate, object));
   };
 
   const needsOrganism = template.inputs.includes("organism");
@@ -503,6 +560,17 @@ export default function MVIKGQueryBuilder() {
               Endpoint: {QLEVER_ENDPOINT}
             </span>
           </div>
+          {!showCustom && (
+            <div style={customisePromptStyle}>
+              <span style={{ color: "#374151", fontSize: 13 }}>
+                Want to customise this query using the graph below?
+              </span>
+              <button onClick={handleStartCustom} style={customiseBtnStyle}>
+                Yes, create a custom copy
+              </button>
+            </div>
+          )}
+
           {error && (
             <pre style={{ color: "#991b1b", background: "#fef2f2", padding: 12, borderRadius: 6, fontSize: 12, overflow: "auto" }}>
               {error}
@@ -511,7 +579,54 @@ export default function MVIKGQueryBuilder() {
         </div>
       </div>
 
-      <MVIKGQueryGraph templateId={templateId} organism={organism} geneUri={geneUri} />
+      {/* ── Custom query section ── */}
+      {showCustom && (
+        <div style={customSectionStyle}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+            <label style={{ ...labelStyle, color: "#059669" }}>
+              ✎ Custom query
+              <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12, marginLeft: 8 }}>
+                (independent copy — template above is unchanged)
+              </span>
+            </label>
+            <button onClick={handleDiscardCustom} style={discardBtnStyle}>
+              Discard custom query
+            </button>
+          </div>
+          <p style={{ color: "#6b7280", fontSize: 12, margin: "0 0 8px" }}>
+            Edit directly in the textarea, or use the graph below — double-click a node to rename a variable,
+            double-click a predicate label to change it. PREFIX, SELECT, FILTER and BIND lines are preserved.
+          </p>
+          <textarea
+            value={customSparql}
+            onChange={(e) => setCustomSparql(e.target.value)}
+            rows={22}
+            spellCheck={false}
+            style={{ ...textareaStyle, borderColor: "#6ee7b7" }}
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+            <button
+              onClick={handleRun}
+              disabled={running || !customSparql.trim()}
+              style={runBtnStyle(running || !customSparql.trim())}
+            >
+              {running ? "Running…" : "▶  Run custom query"}
+            </button>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Endpoint: {QLEVER_ENDPOINT}</span>
+          </div>
+        </div>
+      )}
+
+      <MVIKGQueryGraph
+        sparql={showCustom ? customSparql : sparql}
+        organism={organism}
+        geneUri={geneUri}
+        qleverEndpoint={QLEVER_ENDPOINT}
+        editMode={showCustom}
+        onNodeRename={showCustom ? handleNodeRename : undefined}
+        onPredicateChange={showCustom ? handlePredicateChange : undefined}
+        onAddTriple={showCustom ? handleAddTriple : undefined}
+      />
 
       {/* ── Results ── */}
       {results && <ResultsTable vars={results.vars} rows={results.rows} />}
@@ -557,6 +672,8 @@ const textareaStyle: React.CSSProperties = {
   resize: "vertical",
   outline: "none",
   lineHeight: 1.5,
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 const dropdownStyle: React.CSSProperties = {
@@ -622,4 +739,45 @@ const tdStyle: React.CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+};
+
+const customisePromptStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: "10px 14px",
+  background: "#f0fdf4",
+  border: "1px solid #bbf7d0",
+  borderRadius: 6,
+  marginTop: 4,
+};
+
+const customiseBtnStyle: React.CSSProperties = {
+  padding: "6px 14px",
+  background: "#059669",
+  color: "#fff",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontWeight: 600,
+  fontSize: 12,
+  whiteSpace: "nowrap",
+};
+
+const customSectionStyle: React.CSSProperties = {
+  marginTop: 24,
+  padding: "16px 20px",
+  border: "2px solid #6ee7b7",
+  borderRadius: 8,
+  background: "#f9fffe",
+};
+
+const discardBtnStyle: React.CSSProperties = {
+  background: "none",
+  border: "none",
+  color: "#dc2626",
+  fontSize: 12,
+  cursor: "pointer",
+  textDecoration: "underline",
+  padding: 0,
 };
