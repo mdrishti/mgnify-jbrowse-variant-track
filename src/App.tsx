@@ -1,8 +1,119 @@
 import "@fontsource/roboto";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { GeneViewer } from "./components/GeneViewer";
 
+// ---------------------------------------------------------------------------
+// Manifest types
+// ---------------------------------------------------------------------------
+
+interface ManifestEntry {
+  vcfGz:   string | null;
+  tbi:     string | null;
+  fastaGz: string | null;
+  fai:     string | null;
+  gzi:     string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Organism viewer — loaded when ?organism= URL param is present
+// ---------------------------------------------------------------------------
+
+function OrganismViewer({ organism }: { organism: string }) {
+  const [entry, setEntry] = useState<ManifestEntry | "loading" | "not-found">("loading");
+
+  useEffect(() => {
+    fetch("/sample-data/variants/manifest.json")
+      .then((r) => {
+        if (!r.ok) throw new Error("manifest not found");
+        return r.json();
+      })
+      .then((manifest: Record<string, ManifestEntry>) => {
+        setEntry(manifest[organism] ?? "not-found");
+      })
+      .catch(() => setEntry("not-found"));
+  }, [organism]);
+
+  const displayName = organism.replace(/_/g, " ");
+
+  const header = (
+    <header style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+      <img src="/MGnify-logo.svg" alt="MGnify" style={{ height: 36 }} />
+      <h2 style={{ margin: 0, fontSize: 24 }}>{displayName}</h2>
+    </header>
+  );
+
+  if (entry === "loading") {
+    return (
+      <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
+        {header}
+        <p>Loading data…</p>
+      </div>
+    );
+  }
+
+  if (entry === "not-found") {
+    return (
+      <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
+        {header}
+        <p style={{ color: "#991b1b" }}>
+          No visualization files found for <strong>{displayName}</strong>.
+          Run <code>compress_and_deploy.sh --deploy</code> in the mvikgViz repo to deploy VCF files.
+        </p>
+      </div>
+    );
+  }
+
+  if (!entry.fastaGz || !entry.fai || !entry.gzi) {
+    return (
+      <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
+        {header}
+        <p style={{ color: "#92400e" }}>
+          VCF files are available for <strong>{displayName}</strong> but no reference FASTA has been
+          deployed yet. Run <code>makeVCF.py --keep-genome</code> and then bgzip + faidx the FASTA,
+          then re-run <code>compress_and_deploy.sh --deploy</code>.
+        </p>
+        <p style={{ fontSize: 13, color: "#6b7280" }}>
+          VCF: <code>{entry.vcfGz}</code>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ width: "100%", padding: 16, fontFamily: "system-ui, sans-serif" }}>
+      {header}
+      <GeneViewer
+        assembly={{
+          name: organism,
+          displayName,
+          fasta: { fastaUrl: entry.fastaGz, faiUrl: entry.fai, gziUrl: entry.gzi },
+        }}
+        annotation={undefined}
+        variants={
+          entry.vcfGz && entry.tbi
+            ? { name: `${displayName} variants`, vcfUrl: entry.vcfGz, tbiUrl: entry.tbi }
+            : undefined
+        }
+        ui={{
+          showLegends: false,
+          showFeaturePanel: true,
+          showGenesInViewTable: false,
+          genesInViewTypes: ["CDS"],
+        }}
+        heightPx={720}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Default app — env-var driven (Path A single-organism demo)
+// ---------------------------------------------------------------------------
+
 export default function App() {
+  const orgParam = new URLSearchParams(window.location.search).get("organism");
+  if (orgParam) return <OrganismViewer organism={orgParam} />;
+
   const assemblyName = import.meta.env.VITE_ASSEMBLY_NAME || "assembly";
 
   const fastaUrl = import.meta.env.VITE_FASTA_GZ_URL || "";
@@ -26,7 +137,6 @@ export default function App() {
     import.meta.env.VITE_INITIAL_LOCATION ||
     (vcfUrl ? "contig_1:1198000..1216000" : undefined);
 
-  /** Match parsed region span so zoom shows the full demo window (not a 20 kb default). */
   const variantDemoVisibleBp = (() => {
     const loc = initialLocation;
     if (!loc) return 35000;

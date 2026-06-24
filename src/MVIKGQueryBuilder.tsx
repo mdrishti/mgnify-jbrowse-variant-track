@@ -65,12 +65,8 @@ WHERE {
     VALUES ?geneURI { "<${geneUri}>" }
   }
   OPTIONAL { ?sample dcterms:identifier ?accession . }
-  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
-  BIND(IF(BOUND(?accession),
-    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
-               "&accession=", STR(?accession),
-               "&label=", STR(?taxonLabel))),
-    ?taxon) AS ?jbrowseUrl)
+  BIND(REPLACE(STR(?taxonLabel), " ", "_") AS ?orgKey)
+  BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey)) AS ?jbrowseUrl)
 }
 GROUP BY ?article ?sample ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
@@ -102,12 +98,8 @@ WHERE {
     ?geneNode dcterms:identifier ?geneURI .
   }
   OPTIONAL { ?sample dcterms:identifier ?accession . }
-  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
-  BIND(IF(BOUND(?accession),
-    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
-               "&accession=", STR(?accession),
-               "&label=", STR(?taxonLabel))),
-    ?taxon) AS ?jbrowseUrl)
+  BIND(REPLACE(STR(?taxonLabel), " ", "_") AS ?orgKey)
+  BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey)) AS ?jbrowseUrl)
 }
 GROUP BY ?article ?sample ?taxon ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
@@ -145,12 +137,8 @@ WHERE {
   ?variant biolink:start_coordinate ?varStart ;
            biolink:end_coordinate ?varEnd .
   OPTIONAL { ?sample dcterms:identifier ?accession . }
-  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
-  BIND(IF(BOUND(?accession),
-    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
-               "&accession=", STR(?accession),
-               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
-    ?taxon) AS ?jbrowseUrl)
+  BIND(REPLACE(STR(?taxonLabel), " ", "_") AS ?orgKey)
+  BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey)) AS ?jbrowseUrl)
 }`
 },
   {
@@ -179,12 +167,8 @@ WHERE {
     VALUES ?geneURI { "<${geneUri}>" }
   }
   OPTIONAL { ?sample dcterms:identifier ?accession . }
-  BIND(STRAFTER(STR(?taxon), "NCBITaxon_") AS ?taxonId)
-  BIND(IF(BOUND(?accession),
-    IRI(CONCAT("http://localhost:5173/mvikg?taxon=NCBITaxon_", ?taxonId,
-               "&accession=", STR(?accession),
-               "&label=", ENCODE_FOR_URI(STR(?taxonLabel)))),
-    ?taxon) AS ?jbrowseUrl)
+  BIND(REPLACE(STR(?taxonLabel), " ", "_") AS ?orgKey)
+  BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey)) AS ?jbrowseUrl)
 }
 GROUP BY ?article ?sample ?taxon ?taxonLabel ?sourceFrom ?sectionType ?geneNode ?variant ?geneURI ?jbrowseUrl
 ORDER BY ?article DESC(?nSampleNodes)
@@ -361,8 +345,21 @@ function TypeaheadInput({ value, onChange, onSelectUri, fetchSuggestions, placeh
 // Results table
 // ---------------------------------------------------------------------------
 
+const MANIFEST_URL = "/sample-data/variants/manifest.json";
+
 function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { type: string; value: string }>[] }) {
+  const [manifest, setManifest] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    fetch(MANIFEST_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => setManifest(m ?? {}))
+      .catch(() => setManifest({}));
+  }, []);
+
   if (rows.length === 0) return <p style={{ color: "#6b7280" }}>No results.</p>;
+
+  const hasJbrowse = vars.includes("jbrowseUrl");
 
   return (
     <div style={{ overflowX: "auto", marginTop: 16 }}>
@@ -373,27 +370,69 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
             {vars.map((v) => (
               <th key={v} style={thStyle}>{v}</th>
             ))}
+            {hasJbrowse && <th style={thStyle}>Visualise</th>}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb" }}>
-              {vars.map((v) => {
-                const cell = row[v];
-                const val = cell?.value ?? "";
-                const isUri = cell?.type === "uri";
-                return (
-                  <td key={v} style={tdStyle}>
-                    {isUri ? (
-                      <a href={val} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>
-                        {val.split("/").pop() || val}
+          {rows.map((row, i) => {
+            // Extract organism key from ?jbrowseUrl value, e.g. /?organism=Bacteroides_fragilis_NCTC_9343
+            const jbrowseVal = row["jbrowseUrl"]?.value ?? "";
+            let orgKey = "";
+            try {
+              orgKey = new URL(jbrowseVal).searchParams.get("organism") ?? "";
+            } catch { /* not a valid URL */ }
+            const inManifest = manifest !== null && orgKey !== "" && orgKey in manifest;
+
+            return (
+              <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb" }}>
+                {vars.map((v) => {
+                  const cell = row[v];
+                  const val = cell?.value ?? "";
+                  const isUri = cell?.type === "uri";
+                  // jbrowseUrl column: always show the organism key as plain text (link handled in extra column)
+                  if (v === "jbrowseUrl") {
+                    return <td key={v} style={tdStyle}>{orgKey || val}</td>;
+                  }
+                  return (
+                    <td key={v} style={tdStyle}>
+                      {isUri ? (
+                        <a href={val} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>
+                          {val.split("/").pop() || val}
+                        </a>
+                      ) : val}
+                    </td>
+                  );
+                })}
+                {hasJbrowse && (
+                  <td style={tdStyle}>
+                    {inManifest ? (
+                      <a
+                        href={jbrowseVal}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 10px",
+                          background: "#2563eb",
+                          color: "#fff",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        View in JBrowse
                       </a>
-                    ) : val}
+                    ) : (
+                      <span style={{ color: "#9ca3af", fontSize: 12 }}>
+                        {manifest === null ? "…" : "not available"}
+                      </span>
+                    )}
                   </td>
-                );
-              })}
-            </tr>
-          ))}
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
