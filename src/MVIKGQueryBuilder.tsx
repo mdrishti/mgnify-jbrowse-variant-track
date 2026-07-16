@@ -288,9 +288,7 @@ function addTripleToSparql(
 // QLever helpers
 // ---------------------------------------------------------------------------
 
-async function runSparql(
-  query: string,
-): Promise<{
+async function runSparql(query: string): Promise<{
   vars: string[];
   rows: Record<string, { type: string; value: string }>[];
 }> {
@@ -464,8 +462,12 @@ function ResultsTable({
             } catch {
               /* not a valid URL */
             }
-            const inManifest =
-              manifest !== null && orgKey !== "" && orgKey in manifest;
+            const manifestEntry =
+              manifest !== null && orgKey !== ""
+                ? (manifest as Record<string, { fastaGz?: string }>)[orgKey]
+                : null;
+            const inManifest = !!manifestEntry;
+            const hasFasta = !!manifestEntry?.fastaGz;
 
             return (
               <tr
@@ -511,7 +513,7 @@ function ResultsTable({
                         style={{
                           display: "inline-block",
                           padding: "3px 10px",
-                          background: inManifest ? "#2563eb" : "#6b7280",
+                          background: hasFasta ? "#2563eb" : "#6b7280",
                           color: "#fff",
                           borderRadius: 4,
                           fontSize: 12,
@@ -519,7 +521,7 @@ function ResultsTable({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {inManifest
+                        {hasFasta
                           ? "View in JBrowse"
                           : "View variants (KG only)"}
                       </a>

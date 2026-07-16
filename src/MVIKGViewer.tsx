@@ -73,6 +73,7 @@ async function checkGffExists(url: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 export interface VariantOnlyViewerProps {
+  onViewStateReady?: (vs: ReturnType<typeof createViewState>) => void;
   taxon: string;
   accession: string;
   fastaUrl: string;
@@ -94,6 +95,7 @@ export function VariantOnlyViewer({
   tbiUrl,
   location,
   displayName,
+  onViewStateReady,
 }: VariantOnlyViewerProps) {
   const [viewState, setViewState] = useState<ReturnType<
     typeof createViewState
@@ -187,10 +189,11 @@ export function VariantOnlyViewer({
         },
       });
       setViewState(state);
+      onViewStateReady?.(state);
     } catch (e: any) {
       setError(String(e?.message ?? e));
     }
-  }, [taxon, accession, fastaUrl, faiUrl, gziUrl, vcfUrl, tbiUrl, location]);
+  }, [taxon, accession, fastaUrl, faiUrl, gziUrl, vcfUrl, tbiUrl, location]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) {
     return (

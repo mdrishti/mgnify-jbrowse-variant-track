@@ -1,5 +1,5 @@
 import "@fontsource/roboto";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createViewState, JBrowseApp } from "@jbrowse/react-app2";
 import VariantsPlugin from "@jbrowse/plugin-variants";
 import { GeneViewer } from "./components/GeneViewer";
@@ -265,8 +265,188 @@ function KGVariantViewer({
 }
 
 // ---------------------------------------------------------------------------
-// StrainViewer — fetches primary seq name from .fai then renders VariantOnlyViewer
+// StrainViewer — fetches primary seq name from .fai, loads variants from KG,
+// then provides direct navigation (1 variant) or a dropdown (many variants).
 // ---------------------------------------------------------------------------
+
+interface ContigVariant {
+  start: number;
+  end: number;
+  svType: string;
+  effect: string;
+  label: string;
+}
+
+async function fetchContigVariants(
+  displayName: string,
+  accession: string,
+): Promise<ContigVariant[]> {
+  const query = `
+PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX sosa:    <http://www.w3.org/ns/sosa/>
+PREFIX biolink: <https://w3id.org/biolink/vocab/>
+PREFIX mvikg:   <https://w3id.org/mvikg#>
+
+SELECT DISTINCT ?start ?stop ?svTypeName ?effect WHERE {
+  ?taxon rdfs:label "${displayName}" .
+  ?taxon dcterms:identifier ?contig .
+  FILTER(STR(?contig) = "${accession}")
+  ?taxon sosa:hasFeatureOfInterest ?geneNode .
+  ?geneNode biolink:has_sequence_variant ?variant .
+  OPTIONAL { ?variant biolink:start_coordinate ?start }
+  OPTIONAL { ?variant biolink:end_coordinate   ?stop  }
+  OPTIONAL { ?variant mvikg:sequenceVariantTypeName ?svTypeName }
+  OPTIONAL { ?variant mvikg:effect ?effect }
+}
+ORDER BY ?start`;
+
+  const params = new URLSearchParams({ query, action: "sparql_json" });
+  const resp = await fetch(`${QLEVER_ENDPOINT}/sparql?${params}`, {
+    headers: { Accept: "application/sparql-results+json" },
+  });
+  if (!resp.ok) return [];
+  const data = await resp.json();
+
+  return data.results.bindings
+    .map((row: Record<string, { value: string }>) => {
+      const start = parseInt(row.start?.value ?? "", 10);
+      const end = parseInt(row.stop?.value ?? "", 10);
+      if (isNaN(start) || isNaN(end)) return null;
+      const svRaw = row.svTypeName?.value ?? "";
+      const svType = svRaw.includes("/") ? svRaw.split("/").pop()! : svRaw;
+      const effect = row.effect?.value ?? "";
+      return {
+        start: start - 1, // 1-based → 0-based
+        end,
+        svType,
+        effect,
+        label: `${accession}:${start}–${end}${svType ? ` (${svType})` : ""}`,
+      };
+    })
+    .filter(Boolean) as ContigVariant[];
+}
+
+function VariantNavigator({
+  accession,
+  variants,
+  viewState,
+}: {
+  accession: string;
+  variants: ContigVariant[];
+  viewState: ReturnType<typeof createViewState> | null;
+}) {
+  const [selected, setSelected] = useState(0);
+
+  const navTo = useCallback(
+    (idx: number) => {
+      const v = variants[idx];
+      if (!v || !viewState) return;
+      // JBrowse session.views is a MobX array on the session model
+      const session = viewState.session as any;
+      const view = session?.views?.[0] ?? session?.view;
+      if (!view?.navToLocString) return;
+      const pad = Math.max(500, Math.round((v.end - v.start) * 2));
+      const locString = `${accession}:${Math.max(0, v.start - pad)}..${v.end + pad}`;
+      // JBrowse may not be fully rendered yet — retry a few times
+      const attempt = (tries: number) => {
+        try {
+          view.navToLocString(locString);
+        } catch {
+          if (tries > 0) setTimeout(() => attempt(tries - 1), 600);
+        }
+      };
+      attempt(5);
+    },
+    [accession, variants, viewState],
+  );
+
+  // Auto-navigate when BOTH viewState AND variants are ready (whichever arrives last)
+  useEffect(() => {
+    if (viewState && variants.length > 0) navTo(0);
+  }, [viewState, variants]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (variants.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "8px 12px",
+        background: "#f0f9ff",
+        border: "1px solid #bae6fd",
+        borderRadius: 8,
+        marginBottom: 10,
+        fontFamily: "system-ui, sans-serif",
+        fontSize: 13,
+      }}
+    >
+      <span style={{ fontWeight: 600, color: "#0369a1" }}>
+        {variants.length === 1 ? "1 variant" : `${variants.length} variants`}
+      </span>
+      {variants.length === 1 ? (
+        <>
+          <span style={{ color: "#374151" }}>{variants[0].label}</span>
+          <button
+            onClick={() => navTo(0)}
+            style={{
+              padding: "3px 10px",
+              background: "#0284c7",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+              fontSize: 12,
+            }}
+          >
+            Go to variant
+          </button>
+        </>
+      ) : (
+        <>
+          <select
+            value={selected}
+            onChange={(e) => {
+              const idx = Number(e.target.value);
+              setSelected(idx);
+              navTo(idx);
+            }}
+            style={{
+              padding: "3px 8px",
+              borderRadius: 5,
+              border: "1px solid #93c5fd",
+              fontSize: 12,
+              maxWidth: 420,
+            }}
+          >
+            {variants.map((v, i) => (
+              <option key={i} value={i}>
+                {v.label}
+                {v.effect ? ` — ${v.effect}` : ""}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => navTo(selected)}
+            style={{
+              padding: "3px 10px",
+              background: "#0284c7",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+              fontSize: 12,
+            }}
+          >
+            Go
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 function StrainViewer({
   organism,
@@ -280,9 +460,13 @@ function StrainViewer({
   initialAccession?: string;
 }) {
   const [primarySeq, setPrimarySeq] = useState<string>(initialAccession ?? "");
+  const [variants, setVariants] = useState<ContigVariant[]>([]);
+  const [viewState, setViewState] = useState<ReturnType<
+    typeof createViewState
+  > | null>(null);
 
+  // Resolve primary sequence name from .fai if no accession provided
   useEffect(() => {
-    // If a specific contig was requested via URL, skip .fai lookup
     if (initialAccession) return;
     if (!entry.fai) return;
     fetch(entry.fai)
@@ -294,18 +478,45 @@ function StrainViewer({
       .catch(() => {});
   }, [entry.fai, initialAccession]);
 
+  // Fetch variants for this contig from KG once we know which sequence to show
+  useEffect(() => {
+    const accession = initialAccession || primarySeq;
+    if (!accession) return;
+    fetchContigVariants(displayName, accession)
+      .then((vs) => {
+        console.log(`[StrainViewer] ${accession}: ${vs.length} variant(s)`, vs);
+        setVariants(vs);
+      })
+      .catch((e) => console.warn("[StrainViewer] KG variant fetch failed:", e));
+  }, [displayName, initialAccession, primarySeq]);
+
+  const accession = initialAccession || primarySeq || organism;
+
+  // DEBUG: expose viewState on window so it can be inspected in DevTools
+  useEffect(() => {
+    if (viewState) (window as any)._jbViewState = viewState;
+  }, [viewState]);
+
   return (
-    <VariantOnlyViewer
-      taxon={organism}
-      accession={primarySeq || organism}
-      fastaUrl={entry.fastaGz!}
-      faiUrl={entry.fai!}
-      gziUrl={entry.gzi!}
-      vcfUrl={entry.vcfGz ?? ""}
-      tbiUrl={entry.tbi ?? ""}
-      location=""
-      displayName={displayName}
-    />
+    <>
+      <VariantNavigator
+        accession={accession}
+        variants={variants}
+        viewState={viewState}
+      />
+      <VariantOnlyViewer
+        taxon={organism}
+        accession={accession}
+        fastaUrl={entry.fastaGz!}
+        faiUrl={entry.fai!}
+        gziUrl={entry.gzi!}
+        vcfUrl={entry.vcfGz ?? ""}
+        tbiUrl={entry.tbi ?? ""}
+        location=""
+        displayName={displayName}
+        onViewStateReady={setViewState}
+      />
+    </>
   );
 }
 
