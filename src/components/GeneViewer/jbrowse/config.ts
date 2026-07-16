@@ -1,14 +1,14 @@
-import type { GeneViewerProps, GffAdapterMode } from '../types';
+import type { GeneViewerProps, GffAdapterMode } from "../types";
 
 export function buildAssemblyConfig(props: GeneViewerProps) {
   const { assembly } = props;
   return {
     name: assembly.name,
     sequence: {
-      type: 'ReferenceSequenceTrack',
-      trackId: 'ReferenceSequenceTrack',
+      type: "ReferenceSequenceTrack",
+      trackId: "ReferenceSequenceTrack",
       adapter: {
-        type: 'BgzipFastaAdapter',
+        type: "BgzipFastaAdapter",
         fastaLocation: { uri: assembly.fasta.fastaUrl },
         faiLocation: { uri: assembly.fasta.faiUrl },
         gziLocation: { uri: assembly.fasta.gziUrl },
@@ -24,15 +24,10 @@ export function buildTracksConfig(
   const { assembly, annotation, essentiality } = props;
   const gff = annotation.gff;
 
-  const adapterMode = opts?.adapterMode ?? gff.gffAdapterMode ?? 'auto';
-  const usePlainAdapter = adapterMode === 'plain';
+  const adapterMode = opts?.adapterMode ?? gff.gffAdapterMode ?? "auto";
+  const usePlainAdapter = adapterMode === "plain";
 
-  const labelFields = [
-    'Name',
-    'gene',
-    'locus_tag',
-    'ID',
-  ];
+  const labelFields = ["Name", "gene", "locus_tag", "ID"];
   const labelJexl = labelFields.map((f) => `get(feature,'${f}')`).join(" || ");
 
   const showEssentiality = !!essentiality?.enabled;
@@ -41,23 +36,24 @@ export function buildTracksConfig(
     : labelJexl;
 
   const essentialityFields = {
-    essentialityCsvUrl: showEssentiality && essentiality?.csvUrl ? essentiality.csvUrl : '',
-    csvJoinColumn: essentiality?.csvJoinColumn ?? 'locus_tag',
-    csvStatusColumn: essentiality?.csvStatusColumn ?? 'essentiality',
-    featureJoinAttribute: essentiality?.featureJoinAttribute ?? 'locus_tag',
+    essentialityCsvUrl:
+      showEssentiality && essentiality?.csvUrl ? essentiality.csvUrl : "",
+    csvJoinColumn: essentiality?.csvJoinColumn ?? "locus_tag",
+    csvStatusColumn: essentiality?.csvStatusColumn ?? "essentiality",
+    featureJoinAttribute: essentiality?.featureJoinAttribute ?? "locus_tag",
   };
 
   const adapterConfig = usePlainAdapter
     ? {
-        type: 'Gff3WithEssentialityAdapter' as const,
+        type: "Gff3WithEssentialityAdapter" as const,
         gffLocation: { uri: gff.gffUrl },
         ...essentialityFields,
       }
     : {
-        type: 'Gff3TabixWithEssentialityAdapter' as const,
+        type: "Gff3TabixWithEssentialityAdapter" as const,
         gffGzLocation: { uri: gff.gffUrl },
         index: {
-          indexType: 'CSI' as const,
+          indexType: "CSI" as const,
           location: { uri: gff.csiUrl },
         },
         ...essentialityFields,
@@ -67,23 +63,23 @@ export function buildTracksConfig(
 
   if (props.variants?.vcfUrl && props.variants?.tbiUrl) {
     tracks.push({
-      type: 'VariantTrack',
-      trackId: 'variants',
-      name: props.variants.name ?? 'Variants',
+      type: "VariantTrack",
+      trackId: "variants",
+      name: props.variants.name ?? "Variants",
       assemblyNames: [assembly.name],
-      category: ['Variants'],
+      category: ["Variants"],
       adapter: {
-        type: 'VcfTabixAdapter',
+        type: "VcfTabixAdapter",
         vcfGzLocation: { uri: props.variants.vcfUrl },
         index: {
-          indexType: 'TBI' as const,
+          indexType: "TBI" as const,
           location: { uri: props.variants.tbiUrl },
         },
       },
       displays: [
         {
-          displayId: 'variants-LinearVariantDisplay',
-          type: 'LinearVariantDisplay',
+          displayId: "variants-LinearVariantDisplay",
+          type: "LinearVariantDisplay",
           height: 140,
           maxFeatureScreenDensity: 0.01,
         },
@@ -93,47 +89,47 @@ export function buildTracksConfig(
   }
 
   tracks.push({
-      type: 'FeatureTrack',
-      trackId: 'gene_features',
-      name: annotation.name ?? 'Genes',
-      assemblyNames: [assembly.name],
-      category: ['Annotations'],
-      adapter: adapterConfig,
-      ...(gff.ixUrl && gff.ixxUrl
-        ? {
-            textSearching: {
-              textSearchAdapter: {
-                type: 'TrixTextSearchAdapter',
-                textSearchAdapterId: 'gff-trix',
-                trackId: 'gene_features',
-                ixFilePath: { uri: gff.ixUrl },
-                ixxFilePath: { uri: gff.ixxUrl },
-                ...(gff.metaUrl ? { metaFilePath: { uri: gff.metaUrl } } : {}),
-                assemblyNames: [assembly.name],
-              },
-            },
-          }
-        : {}),
-      displays: [
-        {
-          displayId: 'gene_features-LinearBasicDisplay',
-          id: 'gene_features-LinearBasicDisplay',
-          type: 'LinearBasicDisplay',
-          height: 280,
-          // Let JBrowse handle clicks -> session.setSelection(feature); we sync via poll
-          renderer: {
-            type: 'SvgFeatureRenderer',
-            // METT-style: jexl:getGeneColor(feature) for highlight + essentiality
-            color1: 'jexl:getGeneColor(feature)',
-            color2: 'jexl:getGeneColor(feature)',
-            labels: {
-              name: 'jexl:' + labelWithEss,
+    type: "FeatureTrack",
+    trackId: "gene_features",
+    name: annotation.name ?? "Genes",
+    assemblyNames: [assembly.name],
+    category: ["Annotations"],
+    adapter: adapterConfig,
+    ...(gff.ixUrl && gff.ixxUrl
+      ? {
+          textSearching: {
+            textSearchAdapter: {
+              type: "TrixTextSearchAdapter",
+              textSearchAdapterId: "gff-trix",
+              trackId: "gene_features",
+              ixFilePath: { uri: gff.ixUrl },
+              ixxFilePath: { uri: gff.ixxUrl },
+              ...(gff.metaUrl ? { metaFilePath: { uri: gff.metaUrl } } : {}),
+              assemblyNames: [assembly.name],
             },
           },
+        }
+      : {}),
+    displays: [
+      {
+        displayId: "gene_features-LinearBasicDisplay",
+        id: "gene_features-LinearBasicDisplay",
+        type: "LinearBasicDisplay",
+        height: 280,
+        // Let JBrowse handle clicks -> session.setSelection(feature); we sync via poll
+        renderer: {
+          type: "SvgFeatureRenderer",
+          // METT-style: jexl:getGeneColor(feature) for highlight + essentiality
+          color1: "jexl:getGeneColor(feature)",
+          color2: "jexl:getGeneColor(feature)",
+          labels: {
+            name: "jexl:" + labelWithEss,
+          },
         },
-      ],
-      visible: true,
-    });
+      },
+    ],
+    visible: true,
+  });
 
   return tracks;
 }
@@ -154,13 +150,13 @@ export function buildDefaultSessionConfig(opts: {
 
   const sessionTracks: any[] = [
     {
-      type: 'ReferenceSequenceTrack',
-      configuration: 'ReferenceSequenceTrack',
+      type: "ReferenceSequenceTrack",
+      configuration: "ReferenceSequenceTrack",
       minimized: false,
       displays: [
         {
-          id: 'ReferenceSequenceTrack',
-          type: 'LinearReferenceSequenceDisplay',
+          id: "ReferenceSequenceTrack",
+          type: "LinearReferenceSequenceDisplay",
           height: 200,
           showForward: true,
           showReverse: true,
@@ -174,7 +170,7 @@ export function buildDefaultSessionConfig(opts: {
   if (variantTrack) {
     sessionTracks.push({
       id: variantTrack.trackId,
-      type: 'VariantTrack',
+      type: "VariantTrack",
       configuration: variantTrack.trackId,
       minimized: false,
       visible: true,
@@ -183,34 +179,34 @@ export function buildDefaultSessionConfig(opts: {
   }
 
   sessionTracks.push({
-    id: geneTrack?.trackId ?? 'gene_features',
-    type: 'FeatureTrack',
-    configuration: geneTrack?.trackId ?? 'gene_features',
+    id: geneTrack?.trackId ?? "gene_features",
+    type: "FeatureTrack",
+    configuration: geneTrack?.trackId ?? "gene_features",
     minimized: false,
     visible: true,
     displays: geneTrack?.displays ?? [
       {
-        displayId: 'gene_features-LinearBasicDisplay',
-        id: 'gene_features-LinearBasicDisplay',
-        type: 'LinearBasicDisplay',
+        displayId: "gene_features-LinearBasicDisplay",
+        id: "gene_features-LinearBasicDisplay",
+        type: "LinearBasicDisplay",
         height: 280,
         renderer: {
-          type: 'SvgFeatureRenderer',
-          color1: 'jexl:getGeneColor(feature)',
-          color2: 'jexl:getGeneColor(feature)',
+          type: "SvgFeatureRenderer",
+          color1: "jexl:getGeneColor(feature)",
+          color2: "jexl:getGeneColor(feature)",
         },
       },
     ],
   });
 
   return {
-    name: 'Gene Viewer session',
+    name: "Gene Viewer session",
     widgets: {
-      BaseFeatureWidget: { type: 'BaseFeatureWidget', disabled: true },
+      BaseFeatureWidget: { type: "BaseFeatureWidget", disabled: true },
     },
     views: [
       {
-        type: 'LinearGenomeView',
+        type: "LinearGenomeView",
         configuration: {
           header: { disable: true, hidden: true },
           // Let JBrowse set session.selection on click; we sync to panel/table via poll
@@ -228,4 +224,3 @@ export function buildDefaultSessionConfig(opts: {
     ],
   };
 }
-

@@ -1,1 +1,1 @@
-export { default } from './JBrowseContigViewer';
+export { default } from "./JBrowseContigViewer";

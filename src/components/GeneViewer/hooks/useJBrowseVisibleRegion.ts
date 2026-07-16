@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { MAX_VISIBLE_BP } from '../constants';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MAX_VISIBLE_BP } from "../constants";
 
 export interface VisibleRegion {
   refName: string;
@@ -32,7 +32,7 @@ function computeVisibleRegion(viewState: any): VisibleRegion | null {
   let end = regionEnd;
 
   try {
-    if (typeof view.pxToBp === 'function') {
+    if (typeof view.pxToBp === "function") {
       const left = view.pxToBp(0);
       const right = view.pxToBp(width);
       const startBp = left?.coord;
@@ -71,9 +71,12 @@ function computeVisibleRegion(viewState: any): VisibleRegion | null {
   };
 }
 
-export function useJBrowseVisibleRegion(viewState: any, pollingMs = 200): VisibleRegion | null {
+export function useJBrowseVisibleRegion(
+  viewState: any,
+  pollingMs = 200,
+): VisibleRegion | null {
   const [region, setRegion] = useState<VisibleRegion | null>(null);
-  const lastSigRef = useRef<string>('');
+  const lastSigRef = useRef<string>("");
 
   const stablePollingMs = useMemo(() => pollingMs, [pollingMs]);
 

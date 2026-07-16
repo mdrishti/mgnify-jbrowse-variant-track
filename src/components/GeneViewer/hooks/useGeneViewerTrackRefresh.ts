@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { VIEW_REPAINT_DELAY_MS } from '../constants';
+import { useEffect } from "react";
+import { VIEW_REPAINT_DELAY_MS } from "../constants";
 
 /** Force track re-render when selection or essentiality changes so JEXL (getGeneColor) runs again. */
 export function useGeneViewerTrackRefresh(
@@ -15,9 +15,12 @@ export function useGeneViewerTrackRefresh(
       const view = viewState.session?.views?.[0];
       if (!view?.tracks) return;
 
-      const geneTrackId = 'gene_features';
+      const geneTrackId = "gene_features";
       let refreshed = false;
-      if (typeof view.hideTrack === 'function' && typeof view.showTrack === 'function') {
+      if (
+        typeof view.hideTrack === "function" &&
+        typeof view.showTrack === "function"
+      ) {
         try {
           const hidden = view.hideTrack(geneTrackId);
           if (hidden > 0) {
@@ -39,7 +42,7 @@ export function useGeneViewerTrackRefresh(
           });
         });
       }
-      if (typeof view.setWidth === 'function' && view.width != null) {
+      if (typeof view.setWidth === "function" && view.width != null) {
         const w = view.width;
         view.setWidth(w + 0.001);
         const t = window.setTimeout(() => {
@@ -54,5 +57,11 @@ export function useGeneViewerTrackRefresh(
     } catch {
       // ignore
     }
-  }, [viewState, selectedLocusTag, selectedGeneId, essentialityIndex, essentialityEnabled]);
+  }, [
+    viewState,
+    selectedLocusTag,
+    selectedGeneId,
+    essentialityIndex,
+    essentialityEnabled,
+  ]);
 }

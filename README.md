@@ -24,6 +24,7 @@ npm install mgnify-jbrowse
 ### Configure and run
 
 1. **Create a React app** (if you don't have one):
+
    ```bash
    npm create vite@latest my-gene-viewer-app -- --template react-ts
    cd my-gene-viewer-app
@@ -42,27 +43,30 @@ For a full step-by-step guide with copy-paste examples, see [docs/USAGE.md](docs
 ### Complete App.tsx example
 
 ```tsx
-import { GeneViewer } from 'mgnify-jbrowse';
-import '@fontsource/roboto';
+import { GeneViewer } from "mgnify-jbrowse";
+import "@fontsource/roboto";
 
 function App() {
-  const assemblyName = import.meta.env.VITE_ASSEMBLY_NAME || 'assembly';
-  const fastaUrl = import.meta.env.VITE_FASTA_GZ_URL || '';
-  const faiUrl = import.meta.env.VITE_FASTA_FAI_URL || '';
-  const gziUrl = import.meta.env.VITE_FASTA_GZI_URL || '';
-  const gffUrl = import.meta.env.VITE_GFF_BGZ_URL || '';
-  const csiUrl = import.meta.env.VITE_GFF_CSI_URL || '';
+  const assemblyName = import.meta.env.VITE_ASSEMBLY_NAME || "assembly";
+  const fastaUrl = import.meta.env.VITE_FASTA_GZ_URL || "";
+  const faiUrl = import.meta.env.VITE_FASTA_FAI_URL || "";
+  const gziUrl = import.meta.env.VITE_FASTA_GZI_URL || "";
+  const gffUrl = import.meta.env.VITE_GFF_BGZ_URL || "";
+  const csiUrl = import.meta.env.VITE_GFF_CSI_URL || "";
 
   if (!fastaUrl || !faiUrl || !gziUrl || !gffUrl || !csiUrl) {
     return (
       <div style={{ padding: 16 }}>
-        <p>Configure URLs in <code>.env.local</code>. See <code>.env.example</code> for the required variables.</p>
+        <p>
+          Configure URLs in <code>.env.local</code>. See{" "}
+          <code>.env.example</code> for the required variables.
+        </p>
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%', padding: 16 }}>
+    <div style={{ width: "100%", padding: 16 }}>
       <h1>MGnify Gene Viewer</h1>
       <GeneViewer
         assembly={{
@@ -70,7 +74,7 @@ function App() {
           fasta: { fastaUrl, faiUrl, gziUrl },
         }}
         annotation={{
-          name: 'Annotations',
+          name: "Annotations",
           gff: { gffUrl, csiUrl },
         }}
         ui={{
@@ -106,14 +110,14 @@ The demo app runs at `http://localhost:5173` and uses the GeneViewer component. 
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [docs/USAGE.md](docs/USAGE.md) | **User guide** – Install from npm, examples, extension ideas |
-| [docs/EXERCISES.md](docs/EXERCISES.md) | **Learn by doing** – Hands-on exercises and tests |
-| [docs/DOCKER.md](docs/DOCKER.md) | Docker deployment guide |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture overview, project structure, data flow, key files |
+| Document                                           | Description                                                                   |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [docs/USAGE.md](docs/USAGE.md)                     | **User guide** – Install from npm, examples, extension ideas                  |
+| [docs/EXERCISES.md](docs/EXERCISES.md)             | **Learn by doing** – Hands-on exercises and tests                             |
+| [docs/DOCKER.md](docs/DOCKER.md)                   | Docker deployment guide                                                       |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Architecture overview, project structure, data flow, key files                |
 | [docs/QuickStartGuide.md](docs/QuickStartGuide.md) | **Developer guide** – Quick start guide: setup, common tasks, troubleshooting |
-| [docs/README.md](docs/README.md) | Documentation index |
+| [docs/README.md](docs/README.md)                   | Documentation index                                                           |
 
 ---
 
@@ -130,25 +134,25 @@ GeneViewer provides:
 - Synced "genes in view" table (based on current viewport)
 
 ```tsx
-import { GeneViewer } from 'mgnify-jbrowse';
+import { GeneViewer } from "mgnify-jbrowse";
 
 function App() {
   return (
     <GeneViewer
       assembly={{
-        name: 'my-assembly',
-        fasta: { fastaUrl: '...', faiUrl: '...', gziUrl: '...' },
+        name: "my-assembly",
+        fasta: { fastaUrl: "...", faiUrl: "...", gziUrl: "..." },
       }}
       annotation={{
-        name: 'Annotations',
-        gff: { gffUrl: '...', csiUrl: '...' },
+        name: "Annotations",
+        gff: { gffUrl: "...", csiUrl: "..." },
       }}
       essentiality={{
         enabled: true,
-        csvUrl: '/essentiality/essentiality_sample.csv',
-        csvJoinColumn: 'locus_tag',
-        csvStatusColumn: 'essentiality',
-        featureJoinAttribute: 'locus_tag',
+        csvUrl: "/essentiality/essentiality_sample.csv",
+        csvJoinColumn: "locus_tag",
+        csvStatusColumn: "essentiality",
+        featureJoinAttribute: "locus_tag",
       }}
       ui={{
         showLegends: true,
@@ -164,19 +168,21 @@ function App() {
 ### JBrowseContigViewer
 
 ```tsx
-import { JBrowseContigViewer, type GenomeMeta } from 'mgnify-jbrowse';
+import { JBrowseContigViewer, type GenomeMeta } from "mgnify-jbrowse";
 
 function App() {
-  const genomeMeta: GenomeMeta = { /* ... */ };
+  const genomeMeta: GenomeMeta = {
+    /* ... */
+  };
   return (
     <JBrowseContigViewer
       genomeMeta={genomeMeta}
       fileLocations={{
-        fasta: 'https://.../genome.fasta.gz',
-        fai: 'https://.../genome.fasta.gz.fai',
-        gzi: 'https://.../genome.fasta.gz.gzi',
-        gff: 'https://.../annotations.gff.bgz',
-        csi: 'https://.../annotations.gff.bgz.csi',
+        fasta: "https://.../genome.fasta.gz",
+        fai: "https://.../genome.fasta.gz.fai",
+        gzi: "https://.../genome.fasta.gz.gzi",
+        gff: "https://.../annotations.gff.bgz",
+        csi: "https://.../annotations.gff.bgz.csi",
       }}
     />
   );
@@ -199,7 +205,7 @@ import {
   getColorForEssentiality,
   getIconForEssentiality,
   normalizeEssentialityStatus,
-} from 'mgnify-jbrowse';
+} from "mgnify-jbrowse";
 ```
 
 ---
@@ -347,7 +353,7 @@ gunzip -c BU_ATCC8492_annotations.gff.gz > BU_ATCC8492_annotations.gff
 bgzip BU_ATCC8492_annotations.gff
 
 
-# 2a. Sort it in case required 
+# 2a. Sort it in case required
 gunzip -c BU_ATCC8492_annotations.gff.gz | sort -k1,1 -k4,4n | bgzip -c > BU_ATCC8492_annotations.gff.gz
 
 # 3. CSI index

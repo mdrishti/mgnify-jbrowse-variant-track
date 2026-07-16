@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
-import { createViewState } from '@jbrowse/react-app2';
-import makeWorkerInstance from '@jbrowse/react-app2/esm/makeWorkerInstance';
-import VariantsPlugin from '@jbrowse/plugin-variants';
-import GeneViewerJBrowsePlugin from '../jbrowse/plugin';
-import { buildDefaultSessionConfig } from '../jbrowse/config';
-import { fetchFirstFaiRef } from '../gff';
-import { parseInitialLocation } from '../utils/parseUtils';
-import type { GeneViewerProps } from '../types';
+import { useEffect } from "react";
+import { createViewState } from "@jbrowse/react-app2";
+import makeWorkerInstance from "@jbrowse/react-app2/esm/makeWorkerInstance";
+import VariantsPlugin from "@jbrowse/plugin-variants";
+import GeneViewerJBrowsePlugin from "../jbrowse/plugin";
+import { buildDefaultSessionConfig } from "../jbrowse/config";
+import { fetchFirstFaiRef } from "../gff";
+import { parseInitialLocation } from "../utils/parseUtils";
+import type { GeneViewerProps } from "../types";
 
 type ViewModel = ReturnType<typeof createViewState>;
 
@@ -29,7 +29,9 @@ export function useGeneViewerInit(
       try {
         setError(null);
 
-        const initialLoc = props.initialLocation ? parseInitialLocation(props.initialLocation) : null;
+        const initialLoc = props.initialLocation
+          ? parseInitialLocation(props.initialLocation)
+          : null;
         let initialRefName: string;
         let initialStart = 0;
         let initialEnd: number;
@@ -47,8 +49,12 @@ export function useGeneViewerInit(
               : first.length;
         }
 
-        const geneTrack = tracksConfig.find((t: any) => t.trackId === 'gene_features');
-        const variantTrack = tracksConfig.find((t: any) => t.trackId === 'variants');
+        const geneTrack = tracksConfig.find(
+          (t: any) => t.trackId === "gene_features",
+        );
+        const variantTrack = tracksConfig.find(
+          (t: any) => t.trackId === "variants",
+        );
         const sessionConfig = buildDefaultSessionConfig({
           assemblyName: props.assembly.name,
           initialRefName,
@@ -61,7 +67,7 @@ export function useGeneViewerInit(
         const config = {
           assemblies: [assemblyConfig],
           tracks: tracksConfig.map((t) => ({ ...t, visible: true })),
-          defaultSession: { ...sessionConfig, name: 'defaultSession' },
+          defaultSession: { ...sessionConfig, name: "defaultSession" },
         };
 
         const plugins = variantTrack

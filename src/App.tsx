@@ -10,11 +10,11 @@ import { VariantOnlyViewer } from "./MVIKGViewer";
 // ---------------------------------------------------------------------------
 
 interface ManifestEntry {
-  vcfGz:   string | null;
-  tbi:     string | null;
+  vcfGz: string | null;
+  tbi: string | null;
   fastaGz: string | null;
-  fai:     string | null;
-  gzi:     string | null;
+  fai: string | null;
+  gzi: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ SELECT ?accession ?start ?stop ?svTypeName ?effect ?biome ?pmcId WHERE {
     const svRaw = g(row, "svTypeName");
     const svType = svRaw.includes("#")
       ? svRaw.split("#").pop()!
-      : svRaw.split("/").pop() ?? svRaw;
+      : (svRaw.split("/").pop() ?? svRaw);
 
     const uid = `${refName}:${start}-${end}:${svType}`;
     if (seenIds.has(uid)) continue;
@@ -121,7 +121,9 @@ function KGVariantViewer({
 
   // Revoke blob URL on unmount to free memory
   useEffect(() => {
-    return () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current); };
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -138,7 +140,7 @@ function KGVariantViewer({
         for (const v of variants) {
           chromSizes[v.refName] = Math.max(
             chromSizes[v.refName] ?? 0,
-            v.end + 10_000
+            v.end + 10_000,
           );
         }
         const firstChrom = Object.keys(chromSizes)[0];
@@ -163,7 +165,7 @@ function KGVariantViewer({
           .join("\n");
         if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = URL.createObjectURL(
-          new Blob([chromSizesText], { type: "text/plain" })
+          new Blob([chromSizesText], { type: "text/plain" }),
         );
         const chromSizesUrl = blobUrlRef.current;
 
@@ -244,8 +246,7 @@ function KGVariantViewer({
       .catch((e) => setError(String(e?.message ?? e)));
   }, [organism, displayName]);
 
-  if (error)
-    return <p style={{ color: "#991b1b", padding: 16 }}>{error}</p>;
+  if (error) return <p style={{ color: "#991b1b", padding: 16 }}>{error}</p>;
   if (!viewState)
     return <p style={{ padding: 16, color: "#6b7280" }}>{status}</p>;
 
@@ -312,7 +313,13 @@ function StrainViewer({
 // PreparePanel — calls api_server, polls for progress, then re-checks manifest
 // ---------------------------------------------------------------------------
 
-type PrepareStatus = "idle" | "pending" | "running" | "ready" | "error" | "unavailable";
+type PrepareStatus =
+  | "idle"
+  | "pending"
+  | "running"
+  | "ready"
+  | "error"
+  | "unavailable";
 
 function PreparePanel({
   organism,
@@ -329,7 +336,10 @@ function PreparePanel({
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   };
 
   const checkManifestAndNotify = async () => {
@@ -338,8 +348,13 @@ function PreparePanel({
       if (!r.ok) return false;
       const manifest: Record<string, ManifestEntry> = await r.json();
       const entry = manifest[organism];
-      if (entry?.fastaGz && entry?.vcfGz) { onReady(entry); return true; }
-    } catch { /* ignore */ }
+      if (entry?.fastaGz && entry?.vcfGz) {
+        onReady(entry);
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
     return false;
   };
 
@@ -354,7 +369,9 @@ function PreparePanel({
       if (!health.ok) throw new Error();
     } catch {
       setStatus("unavailable");
-      setMessage("Prepare API not running. Start it with: python api_server.py");
+      setMessage(
+        "Prepare API not running. Start it with: python api_server.py",
+      );
       return;
     }
 
@@ -387,24 +404,42 @@ function PreparePanel({
   useEffect(() => () => stopPolling(), []);
 
   const statusColor: Record<PrepareStatus, string> = {
-    idle: "#374151", pending: "#92400e", running: "#1d4ed8",
-    ready: "#065f46", error: "#991b1b", unavailable: "#991b1b",
+    idle: "#374151",
+    pending: "#92400e",
+    running: "#1d4ed8",
+    ready: "#065f46",
+    error: "#991b1b",
+    unavailable: "#991b1b",
   };
 
   return (
-    <div style={{ padding: 16, background: "#f9fafb", borderRadius: 8, border: "1px solid #e5e7eb" }}>
+    <div
+      style={{
+        padding: 16,
+        background: "#f9fafb",
+        borderRadius: 8,
+        border: "1px solid #e5e7eb",
+      }}
+    >
       <p style={{ margin: "0 0 8px", fontSize: 13, color: "#6b7280" }}>
-        Reference files for <strong>{displayName}</strong> are not yet deployed locally.
-        Clicking below will download the reference genome from NCBI, generate the VCF,
-        and deploy everything automatically. This takes 1–5 minutes per strain.
+        Reference files for <strong>{displayName}</strong> are not yet deployed
+        locally. Clicking below will download the reference genome from NCBI,
+        generate the VCF, and deploy everything automatically. This takes 1–5
+        minutes per strain.
       </p>
 
       {status === "idle" && (
         <button
           onClick={startPipeline}
           style={{
-            padding: "8px 20px", background: "#1d4ed8", color: "#fff",
-            border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, fontSize: 13,
+            padding: "8px 20px",
+            background: "#1d4ed8",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: 13,
           }}
         >
           ⬇ Download &amp; prepare files for {displayName}
@@ -413,27 +448,54 @@ function PreparePanel({
 
       {status !== "idle" && (
         <div style={{ marginTop: 8 }}>
-          <p style={{ margin: "0 0 6px", fontWeight: 600, color: statusColor[status] }}>
+          <p
+            style={{
+              margin: "0 0 6px",
+              fontWeight: 600,
+              color: statusColor[status],
+            }}
+          >
             {status === "pending" && "⏳ Queued…"}
             {status === "running" && "⚙ Running pipeline…"}
-            {status === "ready"   && "✓ Ready"}
-            {status === "error"   && "✗ Error"}
+            {status === "ready" && "✓ Ready"}
+            {status === "error" && "✗ Error"}
             {status === "unavailable" && "✗ API unavailable"}
           </p>
-          <p style={{ margin: "0 0 8px", fontSize: 13, color: "#374151" }}>{message}</p>
+          <p style={{ margin: "0 0 8px", fontSize: 13, color: "#374151" }}>
+            {message}
+          </p>
           {logLines.length > 0 && (
-            <pre style={{
-              margin: 0, fontSize: 11, background: "#1e1e1e", color: "#d4d4d4",
-              padding: 10, borderRadius: 6, maxHeight: 200, overflow: "auto",
-            }}>
+            <pre
+              style={{
+                margin: 0,
+                fontSize: 11,
+                background: "#1e1e1e",
+                color: "#d4d4d4",
+                padding: 10,
+                borderRadius: 6,
+                maxHeight: 200,
+                overflow: "auto",
+              }}
+            >
               {logLines.join("\n")}
             </pre>
           )}
           {status === "error" && (
             <button
-              onClick={() => { setStatus("idle"); setLogLines([]); }}
-              style={{ marginTop: 8, padding: "6px 14px", background: "#dc2626", color: "#fff",
-                border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}
+              onClick={() => {
+                setStatus("idle");
+                setLogLines([]);
+              }}
+              style={{
+                marginTop: 8,
+                padding: "6px 14px",
+                background: "#dc2626",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+                fontSize: 12,
+              }}
             >
               Retry
             </button>
@@ -442,7 +504,8 @@ function PreparePanel({
       )}
 
       <p style={{ margin: "12px 0 0", fontSize: 12, color: "#9ca3af" }}>
-        While waiting, variant positions from the knowledge graph are shown below.
+        While waiting, variant positions from the knowledge graph are shown
+        below.
       </p>
     </div>
   );
@@ -453,7 +516,13 @@ function PreparePanel({
 // Priority: manifest (full) → trigger pipeline + KG fallback simultaneously
 // ---------------------------------------------------------------------------
 
-function OrganismViewer({ organism, initialAccession }: { organism: string; initialAccession?: string }) {
+function OrganismViewer({
+  organism,
+  initialAccession,
+}: {
+  organism: string;
+  initialAccession?: string;
+}) {
   const [entry, setEntry] = useState<ManifestEntry | null>(null);
   const [manifestChecked, setManifestChecked] = useState(false);
   const displayName = organism.replace(/_/g, " ");
@@ -470,23 +539,46 @@ function OrganismViewer({ organism, initialAccession }: { organism: string; init
   }, [organism]);
 
   const header = (
-    <header style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 16,
+      }}
+    >
       <img src="/MGnify-logo.svg" alt="MGnify" style={{ height: 36 }} />
       <h2 style={{ margin: 0, fontSize: 24 }}>{displayName}</h2>
     </header>
   );
 
   if (!manifestChecked) {
-    return <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>{header}<p>Loading…</p></div>;
+    return (
+      <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
+        {header}
+        <p>Loading…</p>
+      </div>
+    );
   }
 
   return (
-    <div style={{ width: "100%", padding: 16, fontFamily: "system-ui, sans-serif" }}>
+    <div
+      style={{
+        width: "100%",
+        padding: 16,
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       {header}
 
       {/* Full experience once files are ready */}
       {entry ? (
-        <StrainViewer organism={organism} entry={entry} displayName={displayName} initialAccession={initialAccession} />
+        <StrainViewer
+          organism={organism}
+          entry={entry}
+          displayName={displayName}
+          initialAccession={initialAccession}
+        />
       ) : (
         <>
           {/* Trigger pipeline, show progress */}
@@ -511,7 +603,10 @@ function OrganismViewer({ organism, initialAccession }: { organism: string; init
 // ---------------------------------------------------------------------------
 
 function GenusBrowser({ genus }: { genus: string }) {
-  const [manifest, setManifest] = useState<Record<string, ManifestEntry> | null>(null);
+  const [manifest, setManifest] = useState<Record<
+    string,
+    ManifestEntry
+  > | null>(null);
   const [selected, setSelected] = useState<string>("");
 
   useEffect(() => {
@@ -520,7 +615,7 @@ function GenusBrowser({ genus }: { genus: string }) {
       .then((m: Record<string, ManifestEntry>) => {
         setManifest(m);
         const first = Object.keys(m).find((k) =>
-          k.toLowerCase().includes(genus.toLowerCase())
+          k.toLowerCase().includes(genus.toLowerCase()),
         );
         if (first) setSelected(first);
       })
@@ -529,7 +624,12 @@ function GenusBrowser({ genus }: { genus: string }) {
 
   const header = (
     <header
-      style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 16,
+      }}
     >
       <img src="/MGnify-logo.svg" alt="MGnify" style={{ height: 36 }} />
       <h2 style={{ margin: 0, fontSize: 24, textTransform: "capitalize" }}>
@@ -548,7 +648,7 @@ function GenusBrowser({ genus }: { genus: string }) {
   }
 
   const matching = Object.keys(manifest).filter((k) =>
-    k.toLowerCase().includes(genus.toLowerCase())
+    k.toLowerCase().includes(genus.toLowerCase()),
   );
 
   if (matching.length === 0) {
@@ -576,9 +676,22 @@ function GenusBrowser({ genus }: { genus: string }) {
   const displayName = selected.replace(/_/g, " ");
 
   return (
-    <div style={{ width: "100%", padding: 16, fontFamily: "system-ui, sans-serif" }}>
+    <div
+      style={{
+        width: "100%",
+        padding: 16,
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       {header}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         <label style={{ fontWeight: 600, fontSize: 13 }}>Strain:</label>
         <select
           value={selected}
@@ -602,11 +715,22 @@ function GenusBrowser({ genus }: { genus: string }) {
         </span>
       </div>
 
-      {entry && selected && (
-        entry.fastaGz && entry.fai && entry.gzi && entry.vcfGz
-          ? <StrainViewer key={selected} organism={selected} entry={entry} displayName={displayName} />
-          : <KGVariantViewer key={selected} organism={selected} displayName={displayName} />
-      )}
+      {entry &&
+        selected &&
+        (entry.fastaGz && entry.fai && entry.gzi && entry.vcfGz ? (
+          <StrainViewer
+            key={selected}
+            organism={selected}
+            entry={entry}
+            displayName={displayName}
+          />
+        ) : (
+          <KGVariantViewer
+            key={selected}
+            organism={selected}
+            displayName={displayName}
+          />
+        ))}
     </div>
   );
 }
@@ -620,7 +744,10 @@ export default function App() {
   const orgParam = _params.get("organism");
   const accessionParam = _params.get("accession") ?? undefined;
   const genusParam = _params.get("genus");
-  if (orgParam) return <OrganismViewer organism={orgParam} initialAccession={accessionParam} />;
+  if (orgParam)
+    return (
+      <OrganismViewer organism={orgParam} initialAccession={accessionParam} />
+    );
   if (genusParam) return <GenusBrowser genus={genusParam} />;
 
   const assemblyName = import.meta.env.VITE_ASSEMBLY_NAME || "assembly";
@@ -659,10 +786,17 @@ export default function App() {
 
   const header = (
     <header
-      style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 16,
+      }}
     >
       <img src="/MGnify-logo.svg" alt="MGnify" style={{ height: 36 }} />
-      <h2 style={{ margin: 0, fontSize: 30 }}>MGnify Gene Viewer (BU sample)</h2>
+      <h2 style={{ margin: 0, fontSize: 30 }}>
+        MGnify Gene Viewer (BU sample)
+      </h2>
     </header>
   );
 
@@ -713,10 +847,9 @@ VITE_INITIAL_LOCATION=contig_1:1198000..1216000`}
       {header}
       {vcfUrl ? (
         <p style={{ marginTop: 0, color: "#374151" }}>
-          Variant track: PMC12222025 lab-evolution SNPs on{" "}
-          <em>B. uniformis</em> (BU_ATCC8492). Demo region centres on the{" "}
-          <strong>peg.962</strong> cluster (~9 SNPs in ~2 kb). Scroll left for{" "}
-          <strong>peg.902</strong>.
+          Variant track: PMC12222025 lab-evolution SNPs on <em>B. uniformis</em>{" "}
+          (BU_ATCC8492). Demo region centres on the <strong>peg.962</strong>{" "}
+          cluster (~9 SNPs in ~2 kb). Scroll left for <strong>peg.902</strong>.
         </p>
       ) : null}
       <GeneViewer

@@ -10,7 +10,7 @@ export type {
   GeneViewerVariantsConfig,
   GeneViewerUiConfig,
   GffBgzipSource,
-} from './types';
+} from "./types";
 
 export {
   DEFAULT_ESSENTIALITY_COLOR_MAP,
@@ -18,7 +18,7 @@ export {
   getColorForEssentiality,
   getIconForEssentiality,
   normalizeEssentialityStatus,
-} from './essentiality';
+} from "./essentiality";
 
 export {
   COLORS,
@@ -27,7 +27,6 @@ export {
   FEATURE_PANEL_WIDTH_PX,
   MAX_VISIBLE_BP,
   TABLE_SELECTION_COOLDOWN_MS,
-} from './constants';
+} from "./constants";
 
-export { default as GeneViewer } from './GeneViewer';
-
+export { default as GeneViewer } from "./GeneViewer";

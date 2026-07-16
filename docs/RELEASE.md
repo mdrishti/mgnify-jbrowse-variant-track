@@ -23,6 +23,7 @@ Both CI and Publish workflows are **manual only** – no automatic triggers on p
 ### 2. Release and publish
 
 1. Bump version in `package.json`:
+
    ```bash
    npm version patch   # 0.1.2 → 0.1.3
    # or
@@ -32,6 +33,7 @@ Both CI and Publish workflows are **manual only** – no automatic triggers on p
    ```
 
 2. Push the version commit:
+
    ```bash
    git push origin main
    ```
@@ -79,18 +81,18 @@ npm publish --access public
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| `403 Forbidden` on publish | Check NPM_TOKEN has publish scope; verify you're a package maintainer |
-| `402 Payment required` | Package name may be taken; use `--access public` for unscoped packages |
-| Version already exists | Bump version in package.json; npm rejects duplicate versions |
-| Build fails in CI | Run `npm run build` locally; fix any TypeScript or build errors |
+| Issue                      | Solution                                                               |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `403 Forbidden` on publish | Check NPM_TOKEN has publish scope; verify you're a package maintainer  |
+| `402 Payment required`     | Package name may be taken; use `--access public` for unscoped packages |
+| Version already exists     | Bump version in package.json; npm rejects duplicate versions           |
+| Build fails in CI          | Run `npm run build` locally; fix any TypeScript or build errors        |
 
 ---
 
 ## Workflows
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| **CI** | Manual only | Build, test |
+| Workflow           | Trigger     | Purpose        |
+| ------------------ | ----------- | -------------- |
+| **CI**             | Manual only | Build, test    |
 | **Publish to npm** | Manual only | Publish to npm |

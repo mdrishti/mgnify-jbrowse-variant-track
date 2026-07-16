@@ -57,17 +57,17 @@ src/
 
 ### Where to change things
 
-| Task | File(s) |
-|------|---------|
-| Add UI to the feature panel | `components/GeneViewer/components/FeaturePanel.tsx` |
-| Change genes-in-view table | `components/GeneViewer/components/GenesInViewTable.tsx` |
-| Change legend / essentiality toggle | `components/GeneViewer/components/GeneViewerLegends.tsx` |
-| Change track colors / JEXL | `components/GeneViewer/jbrowse/plugin.ts` |
-| Change assembly/track config | `components/GeneViewer/jbrowse/config.ts` |
-| Modify GFF query | `components/GeneViewer/gff.ts` |
-| Change essentiality colors/icons | `components/GeneViewer/essentiality.ts` |
-| Add new props to GeneViewer | `components/GeneViewer/types.ts`, `GeneViewer.tsx` |
-| Change contig viewer config | `JBrowseContigViewer/assembly.ts`, `tracks.ts`, `defaultSessionConfig.ts` |
+| Task                                | File(s)                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Add UI to the feature panel         | `components/GeneViewer/components/FeaturePanel.tsx`                       |
+| Change genes-in-view table          | `components/GeneViewer/components/GenesInViewTable.tsx`                   |
+| Change legend / essentiality toggle | `components/GeneViewer/components/GeneViewerLegends.tsx`                  |
+| Change track colors / JEXL          | `components/GeneViewer/jbrowse/plugin.ts`                                 |
+| Change assembly/track config        | `components/GeneViewer/jbrowse/config.ts`                                 |
+| Modify GFF query                    | `components/GeneViewer/gff.ts`                                            |
+| Change essentiality colors/icons    | `components/GeneViewer/essentiality.ts`                                   |
+| Add new props to GeneViewer         | `components/GeneViewer/types.ts`, `GeneViewer.tsx`                        |
+| Change contig viewer config         | `JBrowseContigViewer/assembly.ts`, `tracks.ts`, `defaultSessionConfig.ts` |
 
 ### Add a new GeneViewer prop
 
@@ -110,13 +110,13 @@ JBrowse JEXL runs in its own render cycle. React state may not be ready when JEX
 
 ## 5. Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm start` | Start Vite dev server (port 5173) |
-| `npm run build` | Build library → `dist/` |
-| `npm run build:app` | Build demo app → `build/` |
-| `npm run preview` | Preview built app |
-| `npm test` | Run Jest tests |
+| Script              | Description                       |
+| ------------------- | --------------------------------- |
+| `npm start`         | Start Vite dev server (port 5173) |
+| `npm run build`     | Build library → `dist/`           |
+| `npm run build:app` | Build demo app → `build/`         |
+| `npm run preview`   | Preview built app                 |
+| `npm test`          | Run Jest tests                    |
 
 ---
 
@@ -134,12 +134,12 @@ Before demoing, verify:
 
 ## 7. Troubleshooting
 
-| Issue | Check |
-|-------|-------|
-| Blue bar not showing | `window.selectedGeneId` in console; track config has `color1: 'jexl:getGeneColor(feature)'` |
-| CORS / 404 on GFF/FASTA | URLs must be reachable from browser; use absolute URLs or same-origin. See [USAGE.md](./USAGE.md#8-troubleshooting) for consumer-side tips |
-| Essentiality not loading | CSV URL; `csvJoinColumn` / `csvStatusColumn` match CSV headers |
-| Build fails | `npm run build`; check `tsconfig.lib.json` includes `src/lib` |
+| Issue                    | Check                                                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Blue bar not showing     | `window.selectedGeneId` in console; track config has `color1: 'jexl:getGeneColor(feature)'`                                                |
+| CORS / 404 on GFF/FASTA  | URLs must be reachable from browser; use absolute URLs or same-origin. See [USAGE.md](./USAGE.md#8-troubleshooting) for consumer-side tips |
+| Essentiality not loading | CSV URL; `csvJoinColumn` / `csvStatusColumn` match CSV headers                                                                             |
+| Build fails              | `npm run build`; check `tsconfig.lib.json` includes `src/lib`                                                                              |
 
 ---
 

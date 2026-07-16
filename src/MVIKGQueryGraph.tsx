@@ -14,7 +14,11 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { useMVIKGSchema, getValidPredicates, SchemaEntry } from "./useMVIKGSchema";
+import {
+  useMVIKGSchema,
+  getValidPredicates,
+  SchemaEntry,
+} from "./useMVIKGSchema";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,7 +79,10 @@ function skipBalancedParens(text: string, idx: number): number {
  * Remove all FILTER(…) and BIND(…) blocks, handling nested parentheses
  * correctly. Returns the cleaned text and a Set of BIND result var names.
  */
-function removeFiltersAndBinds(text: string): { cleaned: string; bindVars: Set<string> } {
+function removeFiltersAndBinds(text: string): {
+  cleaned: string;
+  bindVars: Set<string>;
+} {
   const bindVars = new Set<string>();
   let result = "";
   let i = 0;
@@ -83,13 +90,22 @@ function removeFiltersAndBinds(text: string): { cleaned: string; bindVars: Set<s
     const upper = text.slice(i).toUpperCase();
     if (upper.startsWith("FILTER")) {
       const parenIdx = text.indexOf("(", i + 6);
-      if (parenIdx === -1) { result += text[i++]; continue; }
+      if (parenIdx === -1) {
+        result += text[i++];
+        continue;
+      }
       i = skipBalancedParens(text, parenIdx);
     } else if (upper.startsWith("BIND")) {
       const parenIdx = text.indexOf("(", i + 4);
-      if (parenIdx === -1) { result += text[i++]; continue; }
+      if (parenIdx === -1) {
+        result += text[i++];
+        continue;
+      }
       // Extract BIND result var before removing
-      const inner = text.slice(parenIdx + 1, skipBalancedParens(text, parenIdx) - 1);
+      const inner = text.slice(
+        parenIdx + 1,
+        skipBalancedParens(text, parenIdx) - 1,
+      );
       const asMatch = /AS\s+(\?[\w]+)/i.exec(inner);
       if (asMatch) bindVars.add(asMatch[1].slice(1));
       i = skipBalancedParens(text, parenIdx);
@@ -113,7 +129,10 @@ function splitSentences(text: string): string[] {
     if (ch === "<") {
       // consume URI
       const end = text.indexOf(">", i);
-      if (end === -1) { current += text.slice(i); break; }
+      if (end === -1) {
+        current += text.slice(i);
+        break;
+      }
       current += text.slice(i, end + 1);
       i = end + 1;
     } else if (ch === '"' || ch === "'") {
@@ -156,7 +175,8 @@ function flattenOptionals(body: string): { text: string; optional: boolean }[] {
       break;
     }
     currentText += body.slice(i, optIdx);
-    if (currentText.trim()) segments.push({ text: currentText, optional: false });
+    if (currentText.trim())
+      segments.push({ text: currentText, optional: false });
     currentText = "";
 
     // Find the matching { }
@@ -212,7 +232,10 @@ function normaliseTerm(raw: string): string {
  *   BIND(…)    → skipped (but adds a synthetic node for BIND result)
  *   VALUES ?v { … } → adds a binding triple
  */
-function parseTriplesFromSegment(text: string, optional: boolean): GraphTriple[] {
+function parseTriplesFromSegment(
+  text: string,
+  optional: boolean,
+): GraphTriple[] {
   const triples: GraphTriple[] = [];
 
   // Remove FILTER(…) and BIND(…), correctly handling nested parentheses.
@@ -272,7 +295,12 @@ function parseTriplesFromSegment(text: string, optional: boolean): GraphTriple[]
         currentSubject = normaliseTerm(tokens[0]);
         const pred = normaliseTerm(tokens[1]);
         // Remaining tokens are objects, comma-separated
-        const objTokens = tokens.slice(2).join(" ").split(",").map((s) => s.trim()).filter(Boolean);
+        const objTokens = tokens
+          .slice(2)
+          .join(" ")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
         for (const obj of objTokens) {
           if (obj) {
             triples.push({
@@ -288,7 +316,12 @@ function parseTriplesFromSegment(text: string, optional: boolean): GraphTriple[]
         if (!currentSubject) continue;
         if (tokens.length < 2) continue;
         const pred = normaliseTerm(tokens[0]);
-        const objTokens = tokens.slice(1).join(" ").split(",").map((s) => s.trim()).filter(Boolean);
+        const objTokens = tokens
+          .slice(1)
+          .join(" ")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
         for (const obj of objTokens) {
           if (obj) {
             triples.push({
@@ -313,10 +346,16 @@ function tokenise(text: string): string[] {
   const tokens: string[] = [];
   let i = 0;
   while (i < text.length) {
-    if (/\s/.test(text[i])) { i++; continue; }
+    if (/\s/.test(text[i])) {
+      i++;
+      continue;
+    }
     if (text[i] === "<") {
       const end = text.indexOf(">", i);
-      if (end === -1) { tokens.push(text.slice(i)); break; }
+      if (end === -1) {
+        tokens.push(text.slice(i));
+        break;
+      }
       tokens.push(text.slice(i, end + 1));
       i = end + 1;
     } else if (text[i] === '"' || text[i] === "'") {
@@ -382,7 +421,11 @@ function inferRoot(sparql: string, triples: GraphTriple[]): string {
 function inferNodeTypes(triples: GraphTriple[]): Map<string, string> {
   const types = new Map<string, string>();
   for (const t of triples) {
-    if (t.predicate === "a" || t.predicate === "rdf:type" || t.predicate === "type") {
+    if (
+      t.predicate === "a" ||
+      t.predicate === "rdf:type" ||
+      t.predicate === "type"
+    ) {
       types.set(t.subject, t.object);
     }
   }
@@ -402,8 +445,8 @@ interface LayoutNode {
 
 const NODE_W = 140;
 const NODE_H = 40;
-const LAYER_GAP_Y = 100;  // vertical gap between layers
-const NODE_GAP_X = 160;   // horizontal gap between nodes within a layer
+const LAYER_GAP_Y = 100; // vertical gap between layers
+const NODE_GAP_X = 160; // horizontal gap between nodes within a layer
 
 function isVariableNode(name: string): boolean {
   return !name.includes(":") && !name.includes(" ") && !name.startsWith("[");
@@ -508,20 +551,38 @@ export default function MVIKGQueryGraph({
 }: MVIKGQueryGraphProps) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
-  const [editingNode, setEditingNode] = useState<{ id: string; value: string } | null>(null);
-  const [editingEdge, setEditingEdge] = useState<{ idx: number; value: string; isOther: boolean } | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+  const [editingNode, setEditingNode] = useState<{
+    id: string;
+    value: string;
+  } | null>(null);
+  const [editingEdge, setEditingEdge] = useState<{
+    idx: number;
+    value: string;
+    isOther: boolean;
+  } | null>(null);
   const [addingFrom, setAddingFrom] = useState<string | null>(null);
   const [addPred, setAddPred] = useState("");
   const [addPredIsOther, setAddPredIsOther] = useState(false);
   const [addObject, setAddObject] = useState("");
 
-  const { schema, loading: schemaLoading, allPredicates } = useMVIKGSchema(editMode ? qleverEndpoint : "");
+  const {
+    schema,
+    loading: schemaLoading,
+    allPredicates,
+  } = useMVIKGSchema(editMode ? qleverEndpoint : "");
 
   // Re-parse whenever the sparql string changes
   const triples = useMemo(() => parseSparqlToTriples(sparql), [sparql]);
   const root = useMemo(() => inferRoot(sparql, triples), [sparql, triples]);
-  const { nodes, width, height } = useMemo(() => layoutGraph(root, triples), [root, triples]);
+  const { nodes, width, height } = useMemo(
+    () => layoutGraph(root, triples),
+    [root, triples],
+  );
   const nodeTypes = useMemo(() => inferNodeTypes(triples), [triples]);
 
   const activeId = selected ?? hovered;
@@ -533,7 +594,9 @@ export default function MVIKGQueryGraph({
     activeId === null ||
     id === activeId ||
     triples.some(
-      (t) => (t.subject === activeId && t.object === id) || (t.object === activeId && t.subject === id)
+      (t) =>
+        (t.subject === activeId && t.object === id) ||
+        (t.object === activeId && t.subject === id),
     );
 
   const isBound = (id: string) => {
@@ -598,9 +661,27 @@ export default function MVIKGQueryGraph({
 
   return (
     <div style={containerStyle}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+        }}
+      >
         <label style={labelStyle}>
-          Query graph{editMode && <span style={{ color: "#059669", fontWeight: 400, marginLeft: 8, fontSize: 12 }}>✎ edit mode</span>}
+          Query graph
+          {editMode && (
+            <span
+              style={{
+                color: "#059669",
+                fontWeight: 400,
+                marginLeft: 8,
+                fontSize: 12,
+              }}
+            >
+              ✎ edit mode
+            </span>
+          )}
         </label>
         {selected && (
           <button onClick={() => setSelected(null)} style={clearBtnStyle}>
@@ -609,17 +690,52 @@ export default function MVIKGQueryGraph({
         )}
       </div>
       <p style={hintStyle}>
-        {editMode
-          ? <>Graph is <strong>editable</strong>. Double-click a node to rename a variable. Double-click a predicate label to change it. Press Enter to confirm, Escape to cancel.</>
-          : <>The graph updates live as you edit the query. Click a node to trace connected triples. Dashed lines are <code style={codeStyle}>OPTIONAL</code>. Filled nodes have a value you've entered.</>}
+        {editMode ? (
+          <>
+            Graph is <strong>editable</strong>. Double-click a node to rename a
+            variable. Double-click a predicate label to change it. Press Enter
+            to confirm, Escape to cancel.
+          </>
+        ) : (
+          <>
+            The graph updates live as you edit the query. Click a node to trace
+            connected triples. Dashed lines are{" "}
+            <code style={codeStyle}>OPTIONAL</code>. Filled nodes have a value
+            you've entered.
+          </>
+        )}
       </p>
-      <div style={{ position: "relative", overflow: "auto", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fafafa" }}>
+      <div
+        style={{
+          position: "relative",
+          overflow: "auto",
+          border: "1px solid #e5e7eb",
+          borderRadius: 8,
+          background: "#fafafa",
+        }}
+      >
         <svg width={width} height={height} style={{ display: "block" }}>
           <defs>
-            <marker id="qg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker
+              id="qg-arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
               <path d="M0,0 L10,5 L0,10 z" fill="#9ca3af" />
             </marker>
-            <marker id="qg-arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <marker
+              id="qg-arrow-active"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
               <path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8" />
             </marker>
           </defs>
@@ -647,27 +763,55 @@ export default function MVIKGQueryGraph({
                   stroke={active && activeId ? "#1d4ed8" : "#9ca3af"}
                   strokeWidth={active && activeId ? 2 : 1.5}
                   strokeDasharray={t.optional ? "5,4" : undefined}
-                  markerEnd={active && activeId ? "url(#qg-arrow-active)" : "url(#qg-arrow)"}
+                  markerEnd={
+                    active && activeId
+                      ? "url(#qg-arrow-active)"
+                      : "url(#qg-arrow)"
+                  }
                   onMouseEnter={() =>
-                    setTooltip({ x: midX, y: midY, text: `${t.subject} → ${t.predicate} → ${t.object}${t.optional ? "  (optional)" : ""}` })
+                    setTooltip({
+                      x: midX,
+                      y: midY,
+                      text: `${t.subject} → ${t.predicate} → ${t.object}${t.optional ? "  (optional)" : ""}`,
+                    })
                   }
                   onMouseLeave={() => setTooltip(null)}
                   style={{ cursor: "default" }}
                 />
                 {isEditingThisEdge ? (
-                  <foreignObject x={midX - 90} y={midY - 16} width={200} height={32}>
+                  <foreignObject
+                    x={midX - 90}
+                    y={midY - 16}
+                    width={200}
+                    height={32}
+                  >
                     {editingEdge!.isOther ? (
                       <input
                         autoFocus
                         value={editingEdge!.value}
-                        onChange={(e) => setEditingEdge({ ...editingEdge!, value: e.target.value })}
+                        onChange={(e) =>
+                          setEditingEdge({
+                            ...editingEdge!,
+                            value: e.target.value,
+                          })
+                        }
                         onKeyDown={(e) => {
                           if (e.key === "Enter") commitPredicateChange();
                           if (e.key === "Escape") setEditingEdge(null);
                         }}
                         onBlur={commitPredicateChange}
                         placeholder="e.g. dcterms:hasPart"
-                        style={{ width: "100%", height: "100%", border: "2px solid #059669", borderRadius: 4, padding: "0 4px", fontFamily: "monospace", fontSize: 10, background: "#f0fdf4", outline: "none" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          border: "2px solid #059669",
+                          borderRadius: 4,
+                          padding: "0 4px",
+                          fontFamily: "monospace",
+                          fontSize: 10,
+                          background: "#f0fdf4",
+                          outline: "none",
+                        }}
                       />
                     ) : (
                       <select
@@ -675,29 +819,62 @@ export default function MVIKGQueryGraph({
                         value={editingEdge!.value}
                         onChange={(e) => {
                           if (e.target.value === "__other__") {
-                            setEditingEdge({ ...editingEdge!, value: "", isOther: true });
+                            setEditingEdge({
+                              ...editingEdge!,
+                              value: "",
+                              isOther: true,
+                            });
                           } else {
-                            setEditingEdge({ ...editingEdge!, value: e.target.value });
+                            setEditingEdge({
+                              ...editingEdge!,
+                              value: e.target.value,
+                            });
                             // commit immediately on selection
                             const t = triples[editingEdge!.idx];
-                            if (t && e.target.value && e.target.value !== t.predicate && onPredicateChange) {
+                            if (
+                              t &&
+                              e.target.value &&
+                              e.target.value !== t.predicate &&
+                              onPredicateChange
+                            ) {
                               onPredicateChange(t.predicate, e.target.value);
                             }
                             setEditingEdge(null);
                           }
                         }}
                         onBlur={() => setEditingEdge(null)}
-                        onKeyDown={(e) => { if (e.key === "Escape") setEditingEdge(null); }}
-                        style={{ width: "100%", height: "100%", border: "2px solid #059669", borderRadius: 4, fontFamily: "monospace", fontSize: 10, background: "#f0fdf4", outline: "none" }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditingEdge(null);
+                        }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          border: "2px solid #059669",
+                          borderRadius: 4,
+                          fontFamily: "monospace",
+                          fontSize: 10,
+                          background: "#f0fdf4",
+                          outline: "none",
+                        }}
                       >
-                        {schemaLoading && <option disabled>Loading schema…</option>}
+                        {schemaLoading && (
+                          <option disabled>Loading schema…</option>
+                        )}
                         {(() => {
                           const t = triples[i];
                           const subjType = nodeTypes.get(t.subject);
                           const objType = nodeTypes.get(t.object);
-                          const preds = getValidPredicates(schema, subjType, objType);
+                          const preds = getValidPredicates(
+                            schema,
+                            subjType,
+                            objType,
+                          );
                           const list = preds.length > 0 ? preds : allPredicates;
-                          return list.map((p) => <option key={p} value={p}>{p}</option>);
+                          return list.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ));
                         })()}
                         <option value="__other__">Other…</option>
                       </select>
@@ -718,7 +895,12 @@ export default function MVIKGQueryGraph({
                     onDoubleClick={() => handleEdgeDoubleClick(i, t.predicate)}
                   >
                     {t.predicate}
-                    {editMode && <tspan fill="#d1d5db" fontSize={8}> ✎</tspan>}
+                    {editMode && (
+                      <tspan fill="#d1d5db" fontSize={8}>
+                        {" "}
+                        ✎
+                      </tspan>
+                    )}
                   </text>
                 )}
               </g>
@@ -748,16 +930,51 @@ export default function MVIKGQueryGraph({
                   width={NODE_W}
                   height={NODE_H}
                   rx={isVar ? 8 : 4}
-                  fill={isEditingThisNode ? "#f0fdf4" : bound ? "#dbeafe" : isRoot ? "#eff6ff" : isVar ? "#fff" : "#f3f4f6"}
-                  stroke={isEditingThisNode ? "#059669" : isSelected ? "#1d4ed8" : bound ? "#60a5fa" : isRoot ? "#93c5fd" : "#d1d5db"}
-                  strokeWidth={isEditingThisNode ? 2.5 : isSelected ? 2.5 : isRoot ? 2 : 1.5}
+                  fill={
+                    isEditingThisNode
+                      ? "#f0fdf4"
+                      : bound
+                        ? "#dbeafe"
+                        : isRoot
+                          ? "#eff6ff"
+                          : isVar
+                            ? "#fff"
+                            : "#f3f4f6"
+                  }
+                  stroke={
+                    isEditingThisNode
+                      ? "#059669"
+                      : isSelected
+                        ? "#1d4ed8"
+                        : bound
+                          ? "#60a5fa"
+                          : isRoot
+                            ? "#93c5fd"
+                            : "#d1d5db"
+                  }
+                  strokeWidth={
+                    isEditingThisNode
+                      ? 2.5
+                      : isSelected
+                        ? 2.5
+                        : isRoot
+                          ? 2
+                          : 1.5
+                  }
                 />
                 {isEditingThisNode ? (
-                  <foreignObject x={4} y={4} width={NODE_W - 8} height={NODE_H - 8}>
+                  <foreignObject
+                    x={4}
+                    y={4}
+                    width={NODE_W - 8}
+                    height={NODE_H - 8}
+                  >
                     <input
                       autoFocus
                       value={editingNode!.value}
-                      onChange={(e) => setEditingNode({ id: n.id, value: e.target.value })}
+                      onChange={(e) =>
+                        setEditingNode({ id: n.id, value: e.target.value })
+                      }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") commitNodeRename();
                         if (e.key === "Escape") setEditingNode(null);
@@ -784,21 +1001,51 @@ export default function MVIKGQueryGraph({
                     fontSize={12}
                     fontWeight={isVar ? 600 : 400}
                     fill={isVar ? "#1f2937" : "#6b7280"}
-                    style={{ pointerEvents: "none", fontFamily: isVar ? "system-ui, sans-serif" : "monospace" }}
+                    style={{
+                      pointerEvents: "none",
+                      fontFamily: isVar ? "system-ui, sans-serif" : "monospace",
+                    }}
                   >
                     {isVar ? `?${n.id}` : n.id}
-                    {editMode && isVar && <tspan fill="#d1d5db" fontSize={8}> ✎</tspan>}
+                    {editMode && isVar && (
+                      <tspan fill="#d1d5db" fontSize={8}>
+                        {" "}
+                        ✎
+                      </tspan>
+                    )}
                   </text>
                 )}
                 {/* + button to add a new outgoing triple */}
                 {editMode && isVar && onAddTriple && (
                   <g
                     transform={`translate(${NODE_W / 2 - 10}, ${NODE_H + 4})`}
-                    onClick={(e) => { e.stopPropagation(); setAddingFrom(n.id); setAddPred(""); setAddPredIsOther(false); setAddObject(""); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAddingFrom(n.id);
+                      setAddPred("");
+                      setAddPredIsOther(false);
+                      setAddObject("");
+                    }}
                     style={{ cursor: "pointer" }}
                   >
-                    <circle cx={10} cy={8} r={9} fill="#e0f2fe" stroke="#7dd3fc" strokeWidth={1.5} />
-                    <text x={10} y={13} textAnchor="middle" fontSize={13} fill="#0369a1" style={{ pointerEvents: "none", fontWeight: 700 }}>+</text>
+                    <circle
+                      cx={10}
+                      cy={8}
+                      r={9}
+                      fill="#e0f2fe"
+                      stroke="#7dd3fc"
+                      strokeWidth={1.5}
+                    />
+                    <text
+                      x={10}
+                      y={13}
+                      textAnchor="middle"
+                      fontSize={13}
+                      fill="#0369a1"
+                      style={{ pointerEvents: "none", fontWeight: 700 }}
+                    >
+                      +
+                    </text>
                   </g>
                 )}
               </g>
@@ -833,9 +1080,26 @@ export default function MVIKGQueryGraph({
       {editMode && addingFrom && (
         <div style={addTripleFormStyle}>
           <span style={{ fontWeight: 600, fontSize: 13, color: "#0369a1" }}>
-            Add triple from <code style={{ background: "#e0f2fe", padding: "1px 5px", borderRadius: 3 }}>?{addingFrom}</code>
+            Add triple from{" "}
+            <code
+              style={{
+                background: "#e0f2fe",
+                padding: "1px 5px",
+                borderRadius: 3,
+              }}
+            >
+              ?{addingFrom}
+            </code>
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 10,
+              flexWrap: "wrap",
+            }}
+          >
             <span style={{ fontSize: 12, color: "#374151" }}>Predicate:</span>
             {addPredIsOther ? (
               <input
@@ -849,8 +1113,10 @@ export default function MVIKGQueryGraph({
               <select
                 value={addPred}
                 onChange={(e) => {
-                  if (e.target.value === "__other__") { setAddPredIsOther(true); setAddPred(""); }
-                  else setAddPred(e.target.value);
+                  if (e.target.value === "__other__") {
+                    setAddPredIsOther(true);
+                    setAddPred("");
+                  } else setAddPred(e.target.value);
                 }}
                 style={addInputStyle}
               >
@@ -860,29 +1126,42 @@ export default function MVIKGQueryGraph({
                   const subjType = nodeTypes.get(addingFrom);
                   const preds = getValidPredicates(schema, subjType, undefined);
                   const list = preds.length > 0 ? preds : allPredicates;
-                  return list.map((p) => <option key={p} value={p}>{p}</option>);
+                  return list.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ));
                 })()}
                 <option value="__other__">Other…</option>
               </select>
             )}
-            <span style={{ fontSize: 12, color: "#374151" }}>→ Object variable:</span>
+            <span style={{ fontSize: 12, color: "#374151" }}>
+              → Object variable:
+            </span>
             <input
               value={addObject}
               onChange={(e) => setAddObject(e.target.value)}
               placeholder="e.g. newVar"
               style={{ ...addInputStyle, width: 120 }}
-              onKeyDown={(e) => { if (e.key === "Enter") handleAddTripleSubmit(); if (e.key === "Escape") setAddingFrom(null); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddTripleSubmit();
+                if (e.key === "Escape") setAddingFrom(null);
+              }}
             />
             <button
               onClick={handleAddTripleSubmit}
               disabled={!addPred.trim() || !addObject.trim()}
               style={{
                 padding: "5px 14px",
-                background: !addPred.trim() || !addObject.trim() ? "#9ca3af" : "#0369a1",
+                background:
+                  !addPred.trim() || !addObject.trim() ? "#9ca3af" : "#0369a1",
                 color: "#fff",
                 border: "none",
                 borderRadius: 6,
-                cursor: !addPred.trim() || !addObject.trim() ? "not-allowed" : "pointer",
+                cursor:
+                  !addPred.trim() || !addObject.trim()
+                    ? "not-allowed"
+                    : "pointer",
                 fontWeight: 600,
                 fontSize: 12,
               }}
@@ -891,14 +1170,22 @@ export default function MVIKGQueryGraph({
             </button>
             <button
               onClick={() => setAddingFrom(null)}
-              style={{ background: "none", border: "none", color: "#6b7280", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#6b7280",
+                fontSize: 12,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
             >
               Cancel
             </button>
           </div>
           <p style={{ fontSize: 11, color: "#6b7280", margin: "8px 0 0" }}>
-            Predicates shown are those valid for <strong>?{addingFrom}</strong>'s type in the KG schema.
-            The new triple will be appended to your custom SPARQL.
+            Predicates shown are those valid for <strong>?{addingFrom}</strong>
+            's type in the KG schema. The new triple will be appended to your
+            custom SPARQL.
           </p>
         </div>
       )}

@@ -1,5 +1,9 @@
 /// <reference types="react" />
-export declare function useGeneViewerZoom(viewState: any, props: {
+export declare function useGeneViewerZoom(
+  viewState: any,
+  props: {
     initialBpPerPx?: number;
     initialVisibleBp?: number;
-}, initialZoomAppliedRef: React.MutableRefObject<boolean>): void;
+  },
+  initialZoomAppliedRef: React.MutableRefObject<boolean>,
+): void;

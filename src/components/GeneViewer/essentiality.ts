@@ -1,35 +1,37 @@
-import type { EssentialityColorMap, EssentialityStatus } from './types';
+import type { EssentialityColorMap, EssentialityStatus } from "./types";
 
 export const DEFAULT_ESSENTIALITY_COLOR_MAP: EssentialityColorMap = {
-  essential: '#FF0000',
-  essential_liquid: 'rgb(8,188,152)',
-  essential_solid: '#8B4513',
-  not_essential: '#555555',
-  unclear: '#808080',
-  unknown: '#DAA520',
+  essential: "#FF0000",
+  essential_liquid: "rgb(8,188,152)",
+  essential_solid: "#8B4513",
+  not_essential: "#555555",
+  unclear: "#808080",
+  unknown: "#DAA520",
 };
 
-export function normalizeEssentialityStatus(input: unknown): EssentialityStatus {
-  const raw = String(input ?? '')
+export function normalizeEssentialityStatus(
+  input: unknown,
+): EssentialityStatus {
+  const raw = String(input ?? "")
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '_');
+    .replace(/\s+/g, "_");
 
   switch (raw) {
-    case 'essential':
-      return 'essential';
-    case 'essential_liquid':
-      return 'essential_liquid';
-    case 'essential_solid':
-      return 'essential_solid';
-    case 'not_essential':
-    case 'non_essential':
-    case 'non-essential':
-      return 'not_essential';
-    case 'unclear':
-    case 'unknown':
-    case '':
-      return 'unknown';
+    case "essential":
+      return "essential";
+    case "essential_liquid":
+      return "essential_liquid";
+    case "essential_solid":
+      return "essential_solid";
+    case "not_essential":
+    case "non_essential":
+    case "non-essential":
+      return "not_essential";
+    case "unclear":
+    case "unknown":
+    case "":
+      return "unknown";
     default:
       return raw as EssentialityStatus;
   }
@@ -45,18 +47,18 @@ export function getColorForEssentiality(
 
 export function getIconForEssentiality(status: EssentialityStatus): string {
   switch (status) {
-    case 'essential':
-      return '🧪🧫';
-    case 'essential_liquid':
-      return '🧪';
-    case 'essential_solid':
-      return '🧫';
-    case 'not_essential':
-      return '⛔';
-    case 'unclear':
-    case 'unknown':
+    case "essential":
+      return "🧪🧫";
+    case "essential_liquid":
+      return "🧪";
+    case "essential_solid":
+      return "🧫";
+    case "not_essential":
+      return "⛔";
+    case "unclear":
+    case "unknown":
     default:
-      return '❓';
+      return "❓";
   }
 }
 
@@ -66,13 +68,13 @@ export function getIconForEssentiality(status: EssentialityStatus): string {
  */
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
 
   for (const line of lines) {
     if (!line.trim()) continue;
     const row: string[] = [];
 
-    let cur = '';
+    let cur = "";
     let inQuotes = false;
 
     for (let i = 0; i < line.length; i++) {
@@ -85,9 +87,9 @@ export function parseCsv(text: string): string[][] {
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (ch === ',' && !inQuotes) {
+      } else if (ch === "," && !inQuotes) {
         row.push(cur);
-        cur = '';
+        cur = "";
       } else {
         cur += ch;
       }
@@ -112,8 +114,8 @@ export function buildEssentialityIndexFromCsv(
     statusColumn?: string;
   },
 ): Map<string, EssentialityCsvRow> {
-  const joinColumn = opts?.joinColumn ?? 'locus_tag';
-  const statusColumn = opts?.statusColumn ?? 'essentiality';
+  const joinColumn = opts?.joinColumn ?? "locus_tag";
+  const statusColumn = opts?.statusColumn ?? "essentiality";
 
   const rows = parseCsv(csvText);
   if (rows.length === 0) return new Map();
@@ -132,15 +134,15 @@ export function buildEssentialityIndexFromCsv(
   const index = new Map<string, EssentialityCsvRow>();
 
   for (const row of rows.slice(1)) {
-    const joinKey = (row[joinIdx] ?? '').trim();
+    const joinKey = (row[joinIdx] ?? "").trim();
     if (!joinKey) continue;
 
-    const rawStatus = row[statusIdx] ?? '';
+    const rawStatus = row[statusIdx] ?? "";
     const status = normalizeEssentialityStatus(rawStatus);
 
     const raw: Record<string, string> = {};
     for (let i = 0; i < header.length; i++) {
-      raw[header[i]] = row[i] ?? '';
+      raw[header[i]] = row[i] ?? "";
     }
 
     index.set(joinKey, { joinKey, status, raw });
@@ -148,4 +150,3 @@ export function buildEssentialityIndexFromCsv(
 
   return index;
 }
-

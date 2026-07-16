@@ -9,6 +9,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** See how selection highlighting flows from constants to the viewer.
 
 **Steps:**
+
 1. Open `src/components/GeneViewer/constants.ts`
 2. Change `COLORS.highlight` from `'#2563eb'` to `'#ff0000'` (red)
 3. Run `npm start` and click a gene in the viewer or table
@@ -22,6 +23,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Understand how essentiality colors and icons are wired.
 
 **Steps:**
+
 1. In `src/components/GeneViewer/essentiality.ts`, add a new status to `DEFAULT_ESSENTIALITY_COLOR_MAP`, e.g. `conditional: '#9b59b6'`
 2. In `normalizeEssentialityStatus`, add a case for `'conditional'`
 3. In `getIconForEssentiality`, add a case: `case 'conditional': return '🔀'`
@@ -37,6 +39,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Understand `parseCsv` by breaking it.
 
 **Steps:**
+
 1. In `src/components/GeneViewer/essentiality.ts`, find `parseCsv`
 2. Temporarily change line 86: `cur += ch` to `cur += ch + ch` (double every character)
 3. Run `npm test` — the essentiality tests should fail
@@ -51,12 +54,13 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Learn the essentiality logic by writing a test.
 
 **Steps:**
+
 1. Open `src/components/GeneViewer/essentiality.test.ts`
 2. Add a new test:
    ```ts
    it('normalizes "non-essential" and "non_essential" to not_essential', () => {
-     expect(normalizeEssentialityStatus('non-essential')).toBe('not_essential');
-     expect(normalizeEssentialityStatus('non_essential')).toBe('not_essential');
+     expect(normalizeEssentialityStatus("non-essential")).toBe("not_essential");
+     expect(normalizeEssentialityStatus("non_essential")).toBe("not_essential");
    });
    ```
 3. Run `npm test`
@@ -71,6 +75,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** See how constants affect layout.
 
 **Steps:**
+
 1. In `constants.ts`, change `FEATURE_PANEL_WIDTH_PX` from `380` to `500`
 2. Run the app — the feature panel (right side) should be wider
 
@@ -83,6 +88,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Debug by fixing a failing test.
 
 **Steps:**
+
 1. In `essentiality.test.ts`, find the test for `getColorForEssentiality`
 2. Change one assertion to expect the wrong color, e.g. `expect(getColorForEssentiality('essential')).toBe('#00ff00')`
 3. Run `npm test` — it fails
@@ -98,6 +104,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Trace the selection flow.
 
 **Steps:**
+
 1. Open `src/components/GeneViewer/hooks/useGeneViewerClickHandler.ts`
 2. Add `console.log('Clicked feature:', feature, 'locus:', locusTag)` where the locus is extracted
 3. Run the app, click a gene in the JBrowse track
@@ -112,6 +119,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Understand viewport configuration.
 
 **Steps:**
+
 1. In `src/App.tsx`, the `GeneViewer` receives props. Add `initialVisibleBp={5000}` (zoom in) or `initialVisibleBp={100000}` (zoom out)
 2. Run the app — the initial view changes
 
@@ -124,6 +132,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Understand how locus_tag is extracted from JBrowse features.
 
 **Steps:**
+
 1. Open `src/components/GeneViewer/utils/featureAttrUtils.test.ts`
 2. Add a test that mocks a feature with `get('locus_tag')` returning `'BU_00001'`
 3. Call `extractLocusFromFeature(mockFeature, 'locus_tag')` and expect `'BU_00001'`
@@ -138,6 +147,7 @@ Hands-on exercises to understand the mgnify-jbrowse codebase. No boring walkthro
 **Goal:** Compare with/without essentiality coloring.
 
 **Steps:**
+
 1. In `src/App.tsx`, set `essentiality: { enabled: false }` or remove the `essentiality` prop
 2. Run the app — genes are no longer colored by essentiality status
 3. Re-enable and compare
@@ -153,11 +163,13 @@ npm test
 ```
 
 Run a specific file:
+
 ```bash
 npm test -- essentiality.test
 ```
 
 Watch mode (re-run on save):
+
 ```bash
 npm test -- --watch
 ```

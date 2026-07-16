@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { createViewState, JBrowseApp } from '@jbrowse/react-app2';
-import makeWorkerInstance from '@jbrowse/react-app2/esm/makeWorkerInstance';
-import '@fontsource/roboto';
-import { getAssembly2 } from './assembly';
-import getDefaultSessionConfig from './defaultSessionConfig';
-import getTracks from './tracks';
-import type { GenomeMeta } from './types';
+import React, { useEffect, useMemo, useState } from "react";
+import { createViewState, JBrowseApp } from "@jbrowse/react-app2";
+import makeWorkerInstance from "@jbrowse/react-app2/esm/makeWorkerInstance";
+import "@fontsource/roboto";
+import { getAssembly2 } from "./assembly";
+import getDefaultSessionConfig from "./defaultSessionConfig";
+import getTracks from "./tracks";
+import type { GenomeMeta } from "./types";
 
 type ViewModel = ReturnType<typeof createViewState>;
 
@@ -33,7 +33,10 @@ const JBrowseContigViewer: React.FC<JBrowseContigViewerProps> = ({
     () => getAssembly2(genomeMeta, fileLocations),
     [genomeMeta, fileLocations],
   );
-  const tracks = useMemo(() => getTracks(genomeMeta, fileLocations), [genomeMeta, fileLocations]);
+  const tracks = useMemo(
+    () => getTracks(genomeMeta, fileLocations),
+    [genomeMeta, fileLocations],
+  );
   const sessionConfig = useMemo(
     () => getDefaultSessionConfig(genomeMeta, assembly, tracks),
     [genomeMeta, assembly, tracks],
@@ -43,14 +46,14 @@ const JBrowseContigViewer: React.FC<JBrowseContigViewerProps> = ({
       assemblies: [assembly],
       tracks: tracks.map((track) => ({ ...track, visible: true })),
       defaultSession: sessionConfig
-        ? { ...sessionConfig, name: 'defaultSession' }
+        ? { ...sessionConfig, name: "defaultSession" }
         : undefined,
     }),
     [assembly, tracks, sessionConfig],
   );
 
   useEffect(() => {
-    console.log('Initializing JBrowse');
+    console.log("Initializing JBrowse");
     const state = createViewState({ config, makeWorkerInstance });
     setViewState(state);
   }, [config]);

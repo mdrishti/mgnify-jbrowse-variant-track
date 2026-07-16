@@ -46,7 +46,7 @@ function getParam(params: URLSearchParams, key: string): string {
 }
 
 function parseLocation(
-  location: string
+  location: string,
 ): { refName: string; start: number; end: number } | null {
   // Accepts "NC_004663.1:1..500000" or "NC_004663.1:1-500000"
   const m = location.match(/^([^:]+):(\d+)\s*(?:\.\.|-)\s*(\d+)$/);
@@ -219,9 +219,9 @@ type Mode = "loading" | "full" | "variant-only" | "error";
 export default function MVIKGViewer() {
   const params = new URLSearchParams(window.location.search);
 
-  const taxon = getParam(params, "taxon");         // e.g. NCBITaxon_226186
+  const taxon = getParam(params, "taxon"); // e.g. NCBITaxon_226186
   const accession = getParam(params, "accession"); // e.g. NC_004663.1
-  const location = getParam(params, "location");   // e.g. NC_004663.1:1..500000
+  const location = getParam(params, "location"); // e.g. NC_004663.1:1..500000
   const label = getParam(params, "label");
 
   const [mode, setMode] = useState<Mode>("loading");
@@ -232,12 +232,12 @@ export default function MVIKGViewer() {
 
   const base = `${DATA_BASE_URL}/${taxon}`;
   const fastaUrl = `${base}/${taxon}.fa.gz`;
-  const faiUrl   = `${base}/${taxon}.fa.gz.fai`;
-  const gziUrl   = `${base}/${taxon}.fa.gz.gzi`;
-  const vcfUrl   = `${base}/${taxon}.vcf.gz`;
-  const tbiUrl   = `${base}/${taxon}.vcf.gz.tbi`;
-  const gffUrl   = `${base}/${taxon}.gff.gz`;
-  const csiUrl   = `${base}/${taxon}.gff.gz.csi`;
+  const faiUrl = `${base}/${taxon}.fa.gz.fai`;
+  const gziUrl = `${base}/${taxon}.fa.gz.gzi`;
+  const vcfUrl = `${base}/${taxon}.vcf.gz`;
+  const tbiUrl = `${base}/${taxon}.vcf.gz.tbi`;
+  const gffUrl = `${base}/${taxon}.gff.gz`;
+  const csiUrl = `${base}/${taxon}.gff.gz.csi`;
 
   useEffect(() => {
     if (!taxon || !accession) {
@@ -245,7 +245,7 @@ export default function MVIKGViewer() {
       return;
     }
     checkGffExists(gffUrl).then((exists) =>
-      setMode(exists ? "full" : "variant-only")
+      setMode(exists ? "full" : "variant-only"),
     );
   }, [taxon, accession, gffUrl]);
 
@@ -254,7 +254,9 @@ export default function MVIKGViewer() {
     return (
       <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
         <h2>MVIKG Variant Viewer</h2>
-        <p>Missing required URL parameters. Expected link format from QLever:</p>
+        <p>
+          Missing required URL parameters. Expected link format from QLever:
+        </p>
         <pre style={{ background: "#f3f4f6", padding: 12, borderRadius: 8 }}>
           {[
             "?taxon=NCBITaxon_226186",
@@ -281,7 +283,13 @@ export default function MVIKGViewer() {
   }
 
   return (
-    <div style={{ width: "100%", padding: 16, fontFamily: "system-ui, sans-serif" }}>
+    <div
+      style={{
+        width: "100%",
+        padding: 16,
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
       <header style={{ marginBottom: 12 }}>
         <h2 style={{ margin: 0 }}>{displayName}</h2>
         <small style={{ color: "#6b7280" }}>

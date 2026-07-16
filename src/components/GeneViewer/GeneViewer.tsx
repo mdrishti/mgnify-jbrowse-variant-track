@@ -1,11 +1,26 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createViewState, JBrowseApp } from '@jbrowse/react-app2';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createViewState, JBrowseApp } from "@jbrowse/react-app2";
 
-import type { GeneViewerProps } from './types';
-import { queryGffRegion, queryGffRegionFromPlainGff, type GffFeature } from './gff';
-import { setGeneViewerJexlContext } from './jbrowse/plugin';
-import { buildAssemblyConfig, buildTracksConfig } from './jbrowse/config';
-import { GeneViewerLegends, FeaturePanel, GenesInViewTable } from './components';
+import type { GeneViewerProps } from "./types";
+import {
+  queryGffRegion,
+  queryGffRegionFromPlainGff,
+  type GffFeature,
+} from "./gff";
+import { setGeneViewerJexlContext } from "./jbrowse/plugin";
+import { buildAssemblyConfig, buildTracksConfig } from "./jbrowse/config";
+import {
+  GeneViewerLegends,
+  FeaturePanel,
+  GenesInViewTable,
+} from "./components";
 import {
   VISIBLE_REGION_POLL_MS,
   GFF_QUERY_DEBOUNCE_MS,
@@ -13,19 +28,19 @@ import {
   FEATURE_PANEL_WIDTH_PX,
   DEFAULT_VIEWER_HEIGHT_PX,
   COLORS,
-} from './constants';
-import { useGeneViewerEssentiality } from './hooks/useGeneViewerEssentiality';
-import { useGeneViewerSessionSync } from './hooks/useGeneViewerSessionSync';
-import { useGeneViewerClickHandler } from './hooks/useGeneViewerClickHandler';
-import { useJBrowseVisibleRegion } from './hooks/useJBrowseVisibleRegion';
-import { useGeneViewerInit } from './hooks/useGeneViewerInit';
-import { useResolvedGffAdapterMode } from './hooks/useResolvedGffAdapterMode';
-import { useGeneViewerZoom } from './hooks/useGeneViewerZoom';
-import { useGeneViewerTrackRefresh } from './hooks/useGeneViewerTrackRefresh';
-import { useGeneViewerTableNav } from './hooks/useGeneViewerTableNav';
-import { useGeneViewerHideDrawer } from './hooks/useGeneViewerHideDrawer';
-import { useGeneViewerResizeSync } from './hooks/useGeneViewerResizeSync';
-import { useGeneViewerSelection } from './hooks/useGeneViewerSelection';
+} from "./constants";
+import { useGeneViewerEssentiality } from "./hooks/useGeneViewerEssentiality";
+import { useGeneViewerSessionSync } from "./hooks/useGeneViewerSessionSync";
+import { useGeneViewerClickHandler } from "./hooks/useGeneViewerClickHandler";
+import { useJBrowseVisibleRegion } from "./hooks/useJBrowseVisibleRegion";
+import { useGeneViewerInit } from "./hooks/useGeneViewerInit";
+import { useResolvedGffAdapterMode } from "./hooks/useResolvedGffAdapterMode";
+import { useGeneViewerZoom } from "./hooks/useGeneViewerZoom";
+import { useGeneViewerTrackRefresh } from "./hooks/useGeneViewerTrackRefresh";
+import { useGeneViewerTableNav } from "./hooks/useGeneViewerTableNav";
+import { useGeneViewerHideDrawer } from "./hooks/useGeneViewerHideDrawer";
+import { useGeneViewerResizeSync } from "./hooks/useGeneViewerResizeSync";
+import { useGeneViewerSelection } from "./hooks/useGeneViewerSelection";
 
 type ViewModel = ReturnType<typeof createViewState>;
 
@@ -33,7 +48,9 @@ export default function GeneViewer(props: GeneViewerProps) {
   const [viewState, setViewState] = useState<ViewModel | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [essentialityEnabled, setEssentialityEnabled] = useState<boolean>(!!props.essentiality?.enabled);
+  const [essentialityEnabled, setEssentialityEnabled] = useState<boolean>(
+    !!props.essentiality?.enabled,
+  );
   const [selectedGeneId, setSelectedGeneId] = useState<string | null>(
     props.initialSelection?.locusTag ?? null,
   );
@@ -49,10 +66,10 @@ export default function GeneViewer(props: GeneViewerProps) {
   const initialZoomAppliedRef = useRef<boolean>(false);
   const jbrowseContainerRef = useRef<HTMLDivElement>(null);
 
-  const joinAttribute = props.essentiality?.featureJoinAttribute ?? 'locus_tag';
+  const joinAttribute = props.essentiality?.featureJoinAttribute ?? "locus_tag";
 
   const gff = props.annotation.gff;
-  const gffAdapterMode = gff.gffAdapterMode ?? 'auto';
+  const gffAdapterMode = gff.gffAdapterMode ?? "auto";
   const resolvedGffAdapterMode = useResolvedGffAdapterMode(
     gff.gffUrl,
     gffAdapterMode,
@@ -60,19 +77,29 @@ export default function GeneViewer(props: GeneViewerProps) {
   );
 
   // Resolve a clicked feature id (e.g. GFF ID or locus_tag) to the canonical locus_tag for selection/panel/table
-  const resolveToLocusTag = useCallback((featureId: string, features: GffFeature[]): string => {
-    const norm = String(featureId).trim();
-    if (!norm) return featureId;
-    for (const f of features) {
-      const attrs = f.attributes ?? {};
-      const locus = String(attrs[joinAttribute] ?? attrs.locus_tag ?? f.locus_tag ?? attrs.ID ?? f.id ?? '').trim();
-      const id = String(attrs.ID ?? f.id ?? '').trim();
-      if (norm === locus || norm === id) return locus || id || featureId;
-    }
-    return featureId;
-  }, [joinAttribute]);
+  const resolveToLocusTag = useCallback(
+    (featureId: string, features: GffFeature[]): string => {
+      const norm = String(featureId).trim();
+      if (!norm) return featureId;
+      for (const f of features) {
+        const attrs = f.attributes ?? {};
+        const locus = String(
+          attrs[joinAttribute] ??
+            attrs.locus_tag ??
+            f.locus_tag ??
+            attrs.ID ??
+            f.id ??
+            "",
+        ).trim();
+        const id = String(attrs.ID ?? f.id ?? "").trim();
+        if (norm === locus || norm === id) return locus || id || featureId;
+      }
+      return featureId;
+    },
+    [joinAttribute],
+  );
   const genesInViewTypes = useMemo(
-    () => props.ui?.genesInViewTypes ?? ['CDS'],
+    () => props.ui?.genesInViewTypes ?? ["CDS"],
     [props.ui?.genesInViewTypes],
   );
 
@@ -92,7 +119,10 @@ export default function GeneViewer(props: GeneViewerProps) {
   }, [essentialityError]);
 
   // Compute visible region and query genes-in-view from GFF (must run before selectedFeature/selectedLocusTag)
-  const visibleRegion = useJBrowseVisibleRegion(viewState, VISIBLE_REGION_POLL_MS);
+  const visibleRegion = useJBrowseVisibleRegion(
+    viewState,
+    VISIBLE_REGION_POLL_MS,
+  );
   const gffQueryAbortRef = useRef<{ cancelled: boolean }>({ cancelled: false });
   useEffect(() => {
     if (!visibleRegion || resolvedGffAdapterMode === null) return;
@@ -107,7 +137,7 @@ export default function GeneViewer(props: GeneViewerProps) {
     const run = async () => {
       try {
         const feats =
-          resolvedGffAdapterMode === 'plain'
+          resolvedGffAdapterMode === "plain"
             ? await queryGffRegionFromPlainGff({
                 gffUrl: gff.gffUrl,
                 refName,
@@ -133,16 +163,23 @@ export default function GeneViewer(props: GeneViewerProps) {
       token.cancelled = true;
       window.clearTimeout(id);
     };
-  }, [visibleRegion, resolvedGffAdapterMode, gff.gffUrl, gff.csiUrl, genesInViewTypes]);
+  }, [
+    visibleRegion,
+    resolvedGffAdapterMode,
+    gff.gffUrl,
+    gff.csiUrl,
+    genesInViewTypes,
+  ]);
 
-  const { selectedFeatures, selectedLocusTag, selectedEssentiality } = useGeneViewerSelection(
-    selectedGeneId,
-    genesInView,
-    joinAttribute,
-    essentialityEnabled,
-    essentialityIndex,
-    props.essentiality?.colorMap,
-  );
+  const { selectedFeatures, selectedLocusTag, selectedEssentiality } =
+    useGeneViewerSelection(
+      selectedGeneId,
+      genesInView,
+      joinAttribute,
+      essentialityEnabled,
+      essentialityIndex,
+      props.essentiality?.colorMap,
+    );
 
   // Keep JEXL context up to date (selection + essentiality) so track highlight (blue bar) works.
   // useLayoutEffect so context is set before paint and before track re-render from reload().
@@ -155,7 +192,14 @@ export default function GeneViewer(props: GeneViewerProps) {
       featureJoinAttribute: joinAttribute,
       highlightColor: COLORS.highlight,
     });
-  }, [selectedLocusTag, selectedGeneId, essentialityEnabled, essentialityIndex, joinAttribute, props.essentiality?.colorMap]);
+  }, [
+    selectedLocusTag,
+    selectedGeneId,
+    essentialityEnabled,
+    essentialityIndex,
+    joinAttribute,
+    props.essentiality?.colorMap,
+  ]);
 
   useGeneViewerSessionSync({
     viewState,
@@ -183,12 +227,13 @@ export default function GeneViewer(props: GeneViewerProps) {
   const tracksConfig = useMemo(
     () =>
       buildTracksConfig(props, {
-        adapterMode: resolvedGffAdapterMode ?? 'tabix',
+        adapterMode: resolvedGffAdapterMode ?? "tabix",
       }),
     [props, resolvedGffAdapterMode],
   );
 
-  const initReady = gffAdapterMode !== 'auto' || resolvedGffAdapterMode !== null;
+  const initReady =
+    gffAdapterMode !== "auto" || resolvedGffAdapterMode !== null;
 
   useGeneViewerInit(
     props,
@@ -222,7 +267,14 @@ export default function GeneViewer(props: GeneViewerProps) {
   useGeneViewerResizeSync(viewState, jbrowseContainerRef);
 
   return (
-    <div style={{ width: '100%', border: `1px solid ${COLORS.border}`, borderRadius: 10, overflow: 'hidden' }}>
+    <div
+      style={{
+        width: "100%",
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 10,
+        overflow: "hidden",
+      }}
+    >
       {showLegends ? (
         <GeneViewerLegends
           essentiality={props.essentiality}
@@ -232,14 +284,21 @@ export default function GeneViewer(props: GeneViewerProps) {
       ) : null}
 
       {error ? (
-        <div style={{ padding: 12, background: COLORS.errorBg, borderBottom: `1px solid ${COLORS.errorBorder}`, color: COLORS.errorText }}>
+        <div
+          style={{
+            padding: 12,
+            background: COLORS.errorBg,
+            borderBottom: `1px solid ${COLORS.errorBorder}`,
+            color: COLORS.errorText,
+          }}
+        >
           {error}
         </div>
       ) : null}
 
       <div
         style={{
-          padding: '4px 12px',
+          padding: "4px 12px",
           fontSize: 11,
           color: COLORS.textMuted,
           background: COLORS.backgroundLight,
@@ -247,18 +306,35 @@ export default function GeneViewer(props: GeneViewerProps) {
         }}
         title="Shows current selection – click a gene in the track or a row in the table"
       >
-        Selected: {selectedLocusTag ?? '—'} (genes in view: {genesInView.length})
+        Selected: {selectedLocusTag ?? "—"} (genes in view: {genesInView.length}
+        )
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: showPanel ? `1fr ${FEATURE_PANEL_WIDTH_PX}px` : '1fr', width: '100%' }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: showPanel
+            ? `1fr ${FEATURE_PANEL_WIDTH_PX}px`
+            : "1fr",
+          width: "100%",
+        }}
+      >
         <div
           ref={jbrowseContainerRef}
-          style={{ width: '100%', minWidth: 0, minHeight: heightPx, maxHeight: heightPx, overflow: 'hidden' }}
+          style={{
+            width: "100%",
+            minWidth: 0,
+            minHeight: heightPx,
+            maxHeight: heightPx,
+            overflow: "hidden",
+          }}
         >
           {viewState ? (
             <JBrowseApp viewState={viewState} />
           ) : (
-            <div style={{ padding: 12, color: COLORS.textMuted }}>Loading JBrowse…</div>
+            <div style={{ padding: 12, color: COLORS.textMuted }}>
+              Loading JBrowse…
+            </div>
           )}
         </div>
 
@@ -267,17 +343,27 @@ export default function GeneViewer(props: GeneViewerProps) {
             style={{
               borderLeft: `1px solid ${COLORS.border}`,
               height: heightPx,
-              overflowY: 'auto',
-              overflowX: 'hidden',
+              overflowY: "auto",
+              overflowX: "hidden",
             }}
           >
-            <FeaturePanel features={selectedFeatures} essentiality={selectedEssentiality} />
+            <FeaturePanel
+              features={selectedFeatures}
+              essentiality={selectedEssentiality}
+            />
           </div>
         ) : null}
       </div>
 
       {showTable ? (
-        <div style={{ display: 'grid', gridTemplateColumns: showPanel ? `1fr ${FEATURE_PANEL_WIDTH_PX}px` : '1fr' }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: showPanel
+              ? `1fr ${FEATURE_PANEL_WIDTH_PX}px`
+              : "1fr",
+          }}
+        >
           <div>
             <GenesInViewTable
               features={genesInView}
@@ -285,7 +371,7 @@ export default function GeneViewer(props: GeneViewerProps) {
               onSelect={(id) => {
                 lastTableSelectionTimeRef.current = Date.now();
                 hasNavigatedThisTableClickRef.current = false;
-                if (typeof window !== 'undefined') window.selectedGeneId = id;
+                if (typeof window !== "undefined") window.selectedGeneId = id;
                 setSelectedGeneId(id);
               }}
               joinAttribute={joinAttribute}
@@ -297,4 +383,3 @@ export default function GeneViewer(props: GeneViewerProps) {
     </div>
   );
 }
-

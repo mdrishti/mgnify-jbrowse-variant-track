@@ -1,3 +1,3 @@
-export { default as JBrowseContigViewer, } from '../JBrowseContigViewer';
+export { default as JBrowseContigViewer } from "../JBrowseContigViewer";
 // Standalone GeneViewer component + types/helpers
-export * from '../components/GeneViewer';
+export * from "../components/GeneViewer";

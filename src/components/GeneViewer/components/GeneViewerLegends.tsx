@@ -1,12 +1,12 @@
-import React from 'react';
-import type { EssentialityConfig } from '../types';
+import React from "react";
+import type { EssentialityConfig } from "../types";
 import {
   DEFAULT_ESSENTIALITY_COLOR_MAP,
   getColorForEssentiality,
   getIconForEssentiality,
   normalizeEssentialityStatus,
-} from '../essentiality';
-import { COLORS } from '../constants';
+} from "../essentiality";
+import { COLORS } from "../constants";
 
 export function GeneViewerLegends(props: {
   essentiality?: EssentialityConfig;
@@ -14,25 +14,28 @@ export function GeneViewerLegends(props: {
   onToggleEssentiality?: (next: boolean) => void;
 }) {
   const showEssentiality = props.essentialityEnabled;
-  const colorMap = { ...DEFAULT_ESSENTIALITY_COLOR_MAP, ...(props.essentiality?.colorMap ?? {}) };
+  const colorMap = {
+    ...DEFAULT_ESSENTIALITY_COLOR_MAP,
+    ...(props.essentiality?.colorMap ?? {}),
+  };
 
   const essentialityItems = [
-    { label: 'Essential (Solid)', status: 'essential_solid' },
-    { label: 'Essential (Liquid)', status: 'essential_liquid' },
-    { label: 'Essential', status: 'essential' },
-    { label: 'Non-Essential', status: 'not_essential' },
-    { label: 'Unclear', status: 'unclear' },
+    { label: "Essential (Solid)", status: "essential_solid" },
+    { label: "Essential (Liquid)", status: "essential_liquid" },
+    { label: "Essential", status: "essential" },
+    { label: "Non-Essential", status: "not_essential" },
+    { label: "Unclear", status: "unclear" },
   ] as const;
 
   const codonItems = [
-    { label: 'Start Codon', color: 'green' },
-    { label: 'Stop Codon', color: 'red' },
+    { label: "Start Codon", color: "green" },
+    { label: "Stop Codon", color: "red" },
   ] as const;
 
   const renderSwatch = (color: string) => (
     <span
       style={{
-        display: 'inline-block',
+        display: "inline-block",
         width: 12,
         height: 12,
         borderRadius: 2,
@@ -45,19 +48,33 @@ export function GeneViewerLegends(props: {
   return (
     <div
       style={{
-        padding: '8px 12px',
+        padding: "8px 12px",
         borderBottom: `1px solid ${COLORS.border}`,
-        display: 'flex',
+        display: "flex",
         gap: 24,
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
+        flexWrap: "wrap",
+        alignItems: "flex-start",
         fontSize: 12,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 8 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginRight: 8,
+        }}
+      >
         <div style={{ fontWeight: 700 }}>Legend</div>
         {props.essentiality?.csvUrl ? (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontWeight: 600,
+            }}
+          >
             <input
               type="checkbox"
               checked={props.essentialityEnabled}
@@ -71,13 +88,18 @@ export function GeneViewerLegends(props: {
       {showEssentiality ? (
         <div>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>Essentiality</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}
+          >
             {essentialityItems.map((it) => {
               const status = normalizeEssentialityStatus(it.status);
               const color = getColorForEssentiality(status, colorMap);
               const icon = getIconForEssentiality(status);
               return (
-                <div key={it.label} style={{ display: 'flex', alignItems: 'center' }}>
+                <div
+                  key={it.label}
+                  style={{ display: "flex", alignItems: "center" }}
+                >
                   {renderSwatch(color)}
                   <span>
                     {it.label} <span aria-hidden="true">{icon}</span>
@@ -92,7 +114,10 @@ export function GeneViewerLegends(props: {
       <div>
         <div style={{ fontWeight: 700, marginBottom: 4 }}>Codons</div>
         {codonItems.map((it) => (
-          <div key={it.label} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+          <div
+            key={it.label}
+            style={{ display: "flex", alignItems: "center", marginBottom: 4 }}
+          >
             {renderSwatch(it.color)}
             <span>{it.label}</span>
           </div>
@@ -101,7 +126,7 @@ export function GeneViewerLegends(props: {
 
       <div>
         <div style={{ fontWeight: 700, marginBottom: 4 }}>User Actions</div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
           {renderSwatch(COLORS.highlight)}
           <span>Selected Gene</span>
         </div>

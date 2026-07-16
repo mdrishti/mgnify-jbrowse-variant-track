@@ -39,27 +39,30 @@ npm install mgnify-jbrowse
 Replace the contents with:
 
 ```tsx
-import { GeneViewer } from 'mgnify-jbrowse';
-import '@fontsource/roboto';
+import { GeneViewer } from "mgnify-jbrowse";
+import "@fontsource/roboto";
 
 function App() {
-  const assemblyName = import.meta.env.VITE_ASSEMBLY_NAME || 'assembly';
-  const fastaUrl = import.meta.env.VITE_FASTA_GZ_URL || '';
-  const faiUrl = import.meta.env.VITE_FASTA_FAI_URL || '';
-  const gziUrl = import.meta.env.VITE_FASTA_GZI_URL || '';
-  const gffUrl = import.meta.env.VITE_GFF_BGZ_URL || '';
-  const csiUrl = import.meta.env.VITE_GFF_CSI_URL || '';
+  const assemblyName = import.meta.env.VITE_ASSEMBLY_NAME || "assembly";
+  const fastaUrl = import.meta.env.VITE_FASTA_GZ_URL || "";
+  const faiUrl = import.meta.env.VITE_FASTA_FAI_URL || "";
+  const gziUrl = import.meta.env.VITE_FASTA_GZI_URL || "";
+  const gffUrl = import.meta.env.VITE_GFF_BGZ_URL || "";
+  const csiUrl = import.meta.env.VITE_GFF_CSI_URL || "";
 
   if (!fastaUrl || !faiUrl || !gziUrl || !gffUrl || !csiUrl) {
     return (
       <div style={{ padding: 16 }}>
-        <p>Configure URLs in <code>.env.local</code>. See <code>.env.example</code> for the required variables.</p>
+        <p>
+          Configure URLs in <code>.env.local</code>. See{" "}
+          <code>.env.example</code> for the required variables.
+        </p>
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%', padding: 16 }}>
+    <div style={{ width: "100%", padding: 16 }}>
       <h1>MGnify Gene Viewer</h1>
       <GeneViewer
         assembly={{
@@ -67,7 +70,7 @@ function App() {
           fasta: { fastaUrl, faiUrl, gziUrl },
         }}
         annotation={{
-          name: 'Annotations',
+          name: "Annotations",
           gff: { gffUrl, csiUrl },
         }}
         ui={{
@@ -145,14 +148,22 @@ To color genes by essentiality status, add an `essentiality` config and point to
 
 ```tsx
 <GeneViewer
-  assembly={{ /* ... */ }}
-  annotation={{ /* ... */ }}
+  assembly={
+    {
+      /* ... */
+    }
+  }
+  annotation={
+    {
+      /* ... */
+    }
+  }
   essentiality={{
     enabled: true,
-    csvUrl: 'https://your-server.com/essentiality.csv',
-    csvJoinColumn: 'locus_tag',
-    csvStatusColumn: 'essentiality',
-    featureJoinAttribute: 'locus_tag',
+    csvUrl: "https://your-server.com/essentiality.csv",
+    csvJoinColumn: "locus_tag",
+    csvStatusColumn: "essentiality",
+    featureJoinAttribute: "locus_tag",
   }}
   ui={{ showLegends: true, showFeaturePanel: true, showGenesInViewTable: true }}
   heightPx={600}
@@ -179,20 +190,20 @@ If you don't have essentiality data, omit the `essentiality` prop; genes will re
 For contig-level genome browsing with MGnify metadata:
 
 ```tsx
-import { JBrowseContigViewer, type GenomeMeta } from 'mgnify-jbrowse';
-import '@fontsource/roboto';
+import { JBrowseContigViewer, type GenomeMeta } from "mgnify-jbrowse";
+import "@fontsource/roboto";
 
 function App() {
   const genomeMeta: GenomeMeta = {
     id: 123,
-    species: 'Bacteroides uniformis',
-    isolate_name: 'ATCC 8492',
-    assembly_name: 'ERZ1049444',
-    assembly_accession: 'GCA_000154465',
-    fasta_file: 'ERZ1049444_FASTA.fasta.gz',
-    gff_file: 'ERZ1049444_FASTA_annotations.gff.bgz',
-    fasta_url: 'https://...',
-    gff_url: 'https://...',
+    species: "Bacteroides uniformis",
+    isolate_name: "ATCC 8492",
+    assembly_name: "ERZ1049444",
+    assembly_accession: "GCA_000154465",
+    fasta_file: "ERZ1049444_FASTA.fasta.gz",
+    gff_file: "ERZ1049444_FASTA_annotations.gff.bgz",
+    fasta_url: "https://...",
+    gff_url: "https://...",
     type_strain: true,
   };
 
@@ -200,11 +211,12 @@ function App() {
     <JBrowseContigViewer
       genomeMeta={genomeMeta}
       fileLocations={{
-        fasta: 'https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA.fasta.gz',
-        fai: 'https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA.fasta.gz.fai',
-        gzi: 'https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA.fasta.gz.gzi',
-        gff: 'https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA_annotations.gff.bgz',
-        csi: 'https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA_annotations.gff.bgz.csi',
+        fasta:
+          "https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA.fasta.gz",
+        fai: "https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA.fasta.gz.fai",
+        gzi: "https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA.fasta.gz.gzi",
+        gff: "https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA_annotations.gff.bgz",
+        csi: "https://www.ebi.ac.uk/metagenomics/api/v1/analyses/MGYA00516474/file/ERZ1049444_FASTA_annotations.gff.bgz.csi",
       }}
     />
   );
@@ -215,10 +227,10 @@ function App() {
 
 ## 6. Data requirements
 
-| Asset | Format | Index |
-|-------|--------|-------|
+| Asset | Format                        | Index           |
+| ----- | ----------------------------- | --------------- |
 | FASTA | BGZF-compressed (`.fasta.gz`) | `.fai` + `.gzi` |
-| GFF | BGZF-compressed (`.gff.bgz`) | `.csi` |
+| GFF   | BGZF-compressed (`.gff.bgz`)  | `.csi`          |
 
 **Index files:**
 
@@ -231,25 +243,25 @@ See [Generating indexes](../README.md#generating-indexes) in the main README for
 
 ## 7. Ideas for extension
 
-| Idea | Where to start |
-|------|-----------------|
-| Add custom tooltips on gene hover | Extend `GeneViewer` or wrap it; use JBrowse session/feature APIs |
+| Idea                                             | Where to start                                                         |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| Add custom tooltips on gene hover                | Extend `GeneViewer` or wrap it; use JBrowse session/feature APIs       |
 | Integrate with MGnify API for analysis selection | Fetch analysis metadata, build `assembly`/`annotation` config from API |
-| Add export (e.g. BED, sequence) | Use `@jbrowse/core` session APIs to get selected region |
-| Custom feature panel layout | Fork the component or use `FeaturePanel`-style props if exposed |
-| Add track for coverage / BAM | Extend `config.ts` or `tracks.ts` in the source; add new track config |
-| Link to external databases (InterPro, Pfam) | Use GFF attributes in `FeaturePanel` or `GenesInViewTable` |
+| Add export (e.g. BED, sequence)                  | Use `@jbrowse/core` session APIs to get selected region                |
+| Custom feature panel layout                      | Fork the component or use `FeaturePanel`-style props if exposed        |
+| Add track for coverage / BAM                     | Extend `config.ts` or `tracks.ts` in the source; add new track config  |
+| Link to external databases (InterPro, Pfam)      | Use GFF attributes in `FeaturePanel` or `GenesInViewTable`             |
 
 ---
 
 ## 8. Troubleshooting
 
-| Issue | Check |
-|-------|-------|
-| Blank viewer or CORS errors | Ensure FASTA/GFF URLs are reachable from the browser; MGnify API URLs are usually CORS-enabled |
-| Genes not colored by essentiality | Verify `csvJoinColumn` and `featureJoinAttribute` match your CSV and GFF |
-| "Module not found" for `@jbrowse/sv-core` | Install it: `npm install @jbrowse/sv-core` |
-| Build errors with peer deps | Use `npm install --legacy-peer-deps` if needed |
+| Issue                                     | Check                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Blank viewer or CORS errors               | Ensure FASTA/GFF URLs are reachable from the browser; MGnify API URLs are usually CORS-enabled |
+| Genes not colored by essentiality         | Verify `csvJoinColumn` and `featureJoinAttribute` match your CSV and GFF                       |
+| "Module not found" for `@jbrowse/sv-core` | Install it: `npm install @jbrowse/sv-core`                                                     |
+| Build errors with peer deps               | Use `npm install --legacy-peer-deps` if needed                                                 |
 
 ---
 

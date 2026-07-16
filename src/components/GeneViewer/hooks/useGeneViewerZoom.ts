@@ -1,5 +1,9 @@
-import { useEffect } from 'react';
-import { DEFAULT_INITIAL_VISIBLE_BP, ZOOM_RETRY_MAX, ZOOM_RETRY_INTERVAL_MS } from '../constants';
+import { useEffect } from "react";
+import {
+  DEFAULT_INITIAL_VISIBLE_BP,
+  ZOOM_RETRY_MAX,
+  ZOOM_RETRY_INTERVAL_MS,
+} from "../constants";
 
 export function useGeneViewerZoom(
   viewState: any,
@@ -9,7 +13,7 @@ export function useGeneViewerZoom(
   useEffect(() => {
     if (!viewState || initialZoomAppliedRef.current) return;
     const view = viewState.session?.views?.[0];
-    if (!view || view.type !== 'LinearGenomeView') return;
+    if (!view || view.type !== "LinearGenomeView") return;
 
     const apply = () => {
       try {
@@ -17,11 +21,11 @@ export function useGeneViewerZoom(
         const bpPerPx = props.initialBpPerPx;
         const visibleBp = props.initialVisibleBp ?? DEFAULT_INITIAL_VISIBLE_BP;
 
-        if (typeof bpPerPx === 'number' && Number.isFinite(bpPerPx)) {
+        if (typeof bpPerPx === "number" && Number.isFinite(bpPerPx)) {
           (view as any).zoomTo?.(bpPerPx);
         } else if (visibleBp > 0 && width > 0) {
           (view as any).zoomTo?.(visibleBp / width);
-        } else if (typeof view.showAllRegions === 'function') {
+        } else if (typeof view.showAllRegions === "function") {
           view.showAllRegions();
         }
         initialZoomAppliedRef.current = true;

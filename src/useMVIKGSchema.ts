@@ -33,7 +33,7 @@ export function shortName(uri: string): string {
 
 export interface SchemaEntry {
   subjectTypeShort: string; // last URI segment, e.g. "Sample"
-  predicate: string;        // compact form, e.g. "sosa:isSampleOf"
+  predicate: string; // compact form, e.g. "sosa:isSampleOf"
   objectTypeShort: string | null;
 }
 
@@ -67,7 +67,10 @@ export function useMVIKGSchema(endpoint: string): {
   useEffect(() => {
     if (!endpoint) return;
     setLoading(true);
-    const params = new URLSearchParams({ query: SCHEMA_QUERY, action: "sparql_json" });
+    const params = new URLSearchParams({
+      query: SCHEMA_QUERY,
+      action: "sparql_json",
+    });
     fetch(`${endpoint}/sparql?${params}`, {
       headers: { Accept: "application/sparql-results+json" },
     })
@@ -76,11 +79,15 @@ export function useMVIKGSchema(endpoint: string): {
         return r.json();
       })
       .then((data) => {
-        const entries: SchemaEntry[] = (data.results?.bindings ?? []).map((b: any) => ({
-          subjectTypeShort: shortName(b.subjectType?.value ?? ""),
-          predicate: compactUri(b.pred?.value ?? ""),
-          objectTypeShort: b.objectType ? shortName(b.objectType.value) : null,
-        }));
+        const entries: SchemaEntry[] = (data.results?.bindings ?? []).map(
+          (b: any) => ({
+            subjectTypeShort: shortName(b.subjectType?.value ?? ""),
+            predicate: compactUri(b.pred?.value ?? ""),
+            objectTypeShort: b.objectType
+              ? shortName(b.objectType.value)
+              : null,
+          }),
+        );
         setSchema(entries);
       })
       .catch((e) => setError(String(e)))
@@ -99,13 +106,15 @@ export function useMVIKGSchema(endpoint: string): {
 export function getValidPredicates(
   schema: SchemaEntry[],
   subjectType: string | undefined,
-  objectType: string | undefined
+  objectType: string | undefined,
 ): string[] {
   if (schema.length === 0) return [];
   const filtered = schema.filter(
     (e) =>
       (!subjectType || e.subjectTypeShort === subjectType) &&
-      (!objectType || e.objectTypeShort == null || e.objectTypeShort === objectType)
+      (!objectType ||
+        e.objectTypeShort == null ||
+        e.objectTypeShort === objectType),
   );
   return [...new Set(filtered.map((e) => e.predicate))].sort();
 }

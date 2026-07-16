@@ -1,12 +1,14 @@
 export type EssentialityStatus =
-  | 'essential'
-  | 'essential_liquid'
-  | 'essential_solid'
-  | 'not_essential'
-  | 'unclear'
-  | 'unknown';
+  | "essential"
+  | "essential_liquid"
+  | "essential_solid"
+  | "not_essential"
+  | "unclear"
+  | "unknown";
 
-export type EssentialityColorMap = Partial<Record<EssentialityStatus, string>> & {
+export type EssentialityColorMap = Partial<
+  Record<EssentialityStatus, string>
+> & {
   unknown?: string;
 };
 
@@ -19,7 +21,7 @@ export interface FastaBgzipSource {
   gziUrl: string;
 }
 
-export type GffAdapterMode = 'tabix' | 'plain' | 'auto';
+export type GffAdapterMode = "tabix" | "plain" | "auto";
 
 export interface GffBgzipSource {
   /** BGZF-compressed GFF3 URL/path (e.g. `.gff.bgz`) */
@@ -126,4 +128,3 @@ export interface GeneViewerProps {
   /** Fixed height for the overall viewer area. */
   heightPx?: number;
 }
-

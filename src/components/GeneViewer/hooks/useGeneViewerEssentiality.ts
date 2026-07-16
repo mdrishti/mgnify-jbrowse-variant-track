@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { buildEssentialityIndexFromCsv } from '../essentiality';
+import { useEffect, useState } from "react";
+import { buildEssentialityIndexFromCsv } from "../essentiality";
 
 export function useGeneViewerEssentiality(opts: {
   enabled: boolean;
@@ -23,11 +23,14 @@ export function useGeneViewerEssentiality(opts: {
           return;
         }
         const res = await fetch(opts.csvUrl);
-        if (!res.ok) throw new Error(`Failed to fetch essentiality CSV: ${res.status} ${res.statusText}`);
+        if (!res.ok)
+          throw new Error(
+            `Failed to fetch essentiality CSV: ${res.status} ${res.statusText}`,
+          );
         const text = await res.text();
         const idx = buildEssentialityIndexFromCsv(text, {
-          joinColumn: opts.csvJoinColumn ?? 'locus_tag',
-          statusColumn: opts.csvStatusColumn ?? 'essentiality',
+          joinColumn: opts.csvJoinColumn ?? "locus_tag",
+          statusColumn: opts.csvStatusColumn ?? "essentiality",
         });
         const statusMap = new Map<string, any>();
         idx.forEach((row, key) => statusMap.set(key, row.status));

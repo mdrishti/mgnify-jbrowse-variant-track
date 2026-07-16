@@ -1,4 +1,4 @@
-import type { GenomeMeta } from './types';
+import type { GenomeMeta } from "./types";
 
 export const getAssembly2 = (
   genomeMeta: GenomeMeta,
@@ -6,10 +6,10 @@ export const getAssembly2 = (
 ) => ({
   name: genomeMeta.assembly_name,
   sequence: {
-    type: 'ReferenceSequenceTrack',
-    trackId: 'ReferenceSequenceTrack',
+    type: "ReferenceSequenceTrack",
+    trackId: "ReferenceSequenceTrack",
     adapter: {
-      type: 'BgzipFastaAdapter',
+      type: "BgzipFastaAdapter",
       fastaLocation: { uri: fileLocations.fasta },
       faiLocation: { uri: fileLocations.fai },
       gziLocation: { uri: fileLocations.gzi },

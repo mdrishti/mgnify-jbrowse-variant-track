@@ -2,8 +2,7 @@ export {
   default as JBrowseContigViewer,
   type JBrowseContigViewerProps,
   type GenomeMeta,
-} from '../JBrowseContigViewer';
+} from "../JBrowseContigViewer";
 
 // Standalone GeneViewer component + types/helpers
-export * from '../components/GeneViewer';
-
+export * from "../components/GeneViewer";

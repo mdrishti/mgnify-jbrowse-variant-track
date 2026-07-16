@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import {
   getColorForEssentiality,
   getIconForEssentiality,
   normalizeEssentialityStatus,
-} from '../essentiality';
-import type { GffFeature } from '../gff';
-import type { EssentialityColorMap } from '../types';
+} from "../essentiality";
+import type { GffFeature } from "../gff";
+import type { EssentialityColorMap } from "../types";
 
 export function useGeneViewerSelection(
   selectedGeneId: string | null,
@@ -23,7 +23,12 @@ export function useGeneViewerSelection(
     return genesInView.filter((f) => {
       const attrs = f.attributes ?? {};
       const locus = String(
-        attrs[joinAttribute] ?? attrs.locus_tag ?? f.locus_tag ?? attrs.ID ?? f.id ?? '',
+        attrs[joinAttribute] ??
+          attrs.locus_tag ??
+          f.locus_tag ??
+          attrs.ID ??
+          f.id ??
+          "",
       ).trim();
       if (locus === norm) return true;
       if (attrs.ID === norm || attrs.locus_tag === norm) return true;
@@ -41,7 +46,7 @@ export function useGeneViewerSelection(
           f.locus_tag ??
           attrs.ID ??
           f.id ??
-          '',
+          "",
       ).trim();
     }
     return selectedGeneId ? String(selectedGeneId).trim() : null;
@@ -57,7 +62,12 @@ export function useGeneViewerSelection(
       color: getColorForEssentiality(status, essentialityColorMap),
       icon: getIconForEssentiality(status),
     };
-  }, [essentialityEnabled, selectedLocusTag, essentialityIndex, essentialityColorMap]);
+  }, [
+    essentialityEnabled,
+    selectedLocusTag,
+    essentialityIndex,
+    essentialityColorMap,
+  ]);
 
   return { selectedFeatures, selectedLocusTag, selectedEssentiality };
 }

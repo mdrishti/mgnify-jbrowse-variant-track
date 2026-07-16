@@ -46,22 +46,22 @@ export const DEFAULT_VIEWER_HEIGHT_PX = 720;
 // --- Style constants ---
 
 export const COLORS = {
-  border: '#e5e7eb',
-  borderLight: '#f3f4f6',
-  textMuted: '#6b7280',
-  textPrimary: '#374151',
-  textDark: '#111827',
-  background: '#ffffff',
-  backgroundLight: '#f9fafb',
-  errorBg: '#fff7ed',
-  errorBorder: '#fed7aa',
-  errorText: '#9a3412',
-  highlight: '#2563eb',
-  selectedRow: '#eef2ff',
+  border: "#e5e7eb",
+  borderLight: "#f3f4f6",
+  textMuted: "#6b7280",
+  textPrimary: "#374151",
+  textDark: "#111827",
+  background: "#ffffff",
+  backgroundLight: "#f9fafb",
+  errorBg: "#fff7ed",
+  errorBorder: "#fed7aa",
+  errorText: "#9a3412",
+  highlight: "#2563eb",
+  selectedRow: "#eef2ff",
 } as const;
 
 /** Shared table/cell styles for GenesInViewTable and FeaturePanel */
 export const TABLE_STYLES = {
-  cellPadding: '6px 8px',
+  cellPadding: "6px 8px",
   fontSize: 12,
 } as const;

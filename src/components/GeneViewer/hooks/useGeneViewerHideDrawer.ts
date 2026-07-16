@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 /** Hide JBrowse's native menu bar and feature drawer so only our custom panel is used. */
 export function useGeneViewerHideDrawer(
@@ -12,30 +12,32 @@ export function useGeneViewerHideDrawer(
 
     const hideDrawerAndMenu = () => {
       const selectors = [
-        '.MuiDrawer-root',
-        '.MuiDrawer-modal',
-        '.MuiDrawer-docked',
+        ".MuiDrawer-root",
+        ".MuiDrawer-modal",
+        ".MuiDrawer-docked",
         '[class*="BaseFeatureDetail"]',
         '[class*="FeatureDetails"]',
         '[class*="DrawerWidget"]',
         '[class*="FeatureWidget"]',
-        '.MuiBackdrop-root',
+        ".MuiBackdrop-root",
         '[aria-label*="drawer" i]',
       ];
       selectors.forEach((sel) => {
         try {
           container.querySelectorAll(sel).forEach((el) => {
             (el as HTMLElement).style.cssText =
-              'display:none!important;visibility:hidden!important;pointer-events:none!important;';
+              "display:none!important;visibility:hidden!important;pointer-events:none!important;";
           });
         } catch (_) {}
       });
-      const fileBtn = container.querySelector('button[data-testid="dropDownMenuButton"]');
-      if (fileBtn?.textContent?.includes('File')) {
+      const fileBtn = container.querySelector(
+        'button[data-testid="dropDownMenuButton"]',
+      );
+      if (fileBtn?.textContent?.includes("File")) {
         let p: HTMLElement | null = fileBtn.parentElement;
         while (p) {
-          if (p.classList.contains('MuiAppBar-root')) {
-            p.style.display = 'none';
+          if (p.classList.contains("MuiAppBar-root")) {
+            p.style.display = "none";
             break;
           }
           p = p.parentElement;

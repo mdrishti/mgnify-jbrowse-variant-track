@@ -1,6 +1,6 @@
-import { RemoteFile } from 'generic-filehandle';
-import { TabixIndexedFile } from '@gmod/tabix';
-import { unzip } from '@gmod/bgzf-filehandle';
+import { RemoteFile } from "generic-filehandle";
+import { TabixIndexedFile } from "@gmod/tabix";
+import { unzip } from "@gmod/bgzf-filehandle";
 
 export interface FaiRefInfo {
   refName: string;
@@ -15,12 +15,12 @@ export async function fetchFirstFaiRef(faiUrl: string): Promise<FaiRefInfo> {
   const text = await res.text();
   const line = text.split(/\r?\n/).find((l) => l.trim());
   if (!line) {
-    throw new Error('FAI is empty');
+    throw new Error("FAI is empty");
   }
-  const [refName, lengthStr] = line.split('\t');
+  const [refName, lengthStr] = line.split("\t");
   const length = Number(lengthStr);
   if (!refName || !Number.isFinite(length)) {
-    throw new Error('Invalid FAI format');
+    throw new Error("Invalid FAI format");
   }
   return { refName, length };
 }
@@ -42,9 +42,12 @@ export interface GffFeature {
 
 function parseGffAttributes(attrString: string): Record<string, string> {
   const attrs: Record<string, string> = {};
-  const pairs = attrString.split(';').map((s) => s.trim()).filter(Boolean);
+  const pairs = attrString
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
   for (const pair of pairs) {
-    const eq = pair.indexOf('=');
+    const eq = pair.indexOf("=");
     if (eq === -1) continue;
     const key = pair.slice(0, eq).trim();
     const val = pair.slice(eq + 1).trim();
@@ -68,15 +71,27 @@ export async function queryGffRegion(opts: {
     csiFilehandle: new RemoteFile(opts.csiUrl),
   });
 
-  const wantedTypes = opts.featureTypes?.length ? new Set(opts.featureTypes) : null;
+  const wantedTypes = opts.featureTypes?.length
+    ? new Set(opts.featureTypes)
+    : null;
   const features: GffFeature[] = [];
 
   await file.getLines(opts.refName, opts.start, opts.end, (line: string) => {
-    if (!line || line.startsWith('#')) return;
-    const parts = line.split('\t');
+    if (!line || line.startsWith("#")) return;
+    const parts = line.split("\t");
     if (parts.length < 9) return;
 
-    const [refName, source, type, start1, end1, score, strandChar, phase, attrString] = parts;
+    const [
+      refName,
+      source,
+      type,
+      start1,
+      end1,
+      score,
+      strandChar,
+      phase,
+      attrString,
+    ] = parts;
     if (wantedTypes && !wantedTypes.has(type)) return;
 
     // GFF is 1-based inclusive. Convert to 0-based interbase: [start-1, end]
@@ -84,11 +99,7 @@ export async function queryGffRegion(opts: {
     const end = Math.max(start, Number(end1));
 
     const strand: 1 | -1 | 0 =
-      strandChar === '+'
-        ? 1
-        : strandChar === '-'
-          ? -1
-          : 0;
+      strandChar === "+" ? 1 : strandChar === "-" ? -1 : 0;
 
     const attributes = parseGffAttributes(attrString);
 
@@ -114,10 +125,12 @@ export async function queryGffRegion(opts: {
 }
 
 /** Fetch Content-Length via HEAD. Returns null if unavailable. */
-export async function fetchGffContentLength(gffUrl: string): Promise<number | null> {
+export async function fetchGffContentLength(
+  gffUrl: string,
+): Promise<number | null> {
   try {
-    const res = await fetch(gffUrl, { method: 'HEAD' });
-    const len = res.headers.get('content-length');
+    const res = await fetch(gffUrl, { method: "HEAD" });
+    const len = res.headers.get("content-length");
     if (len) {
       const n = parseInt(len, 10);
       if (Number.isFinite(n)) return n;
@@ -145,15 +158,27 @@ export async function queryGffRegionFromPlainGff(opts: {
     buf = await unzip(buf);
   }
   const text = new TextDecoder().decode(buf);
-  const wantedTypes = opts.featureTypes?.length ? new Set(opts.featureTypes) : null;
+  const wantedTypes = opts.featureTypes?.length
+    ? new Set(opts.featureTypes)
+    : null;
   const features: GffFeature[] = [];
 
   for (const line of text.split(/\r?\n/)) {
-    if (!line || line.startsWith('#')) continue;
-    const parts = line.split('\t');
+    if (!line || line.startsWith("#")) continue;
+    const parts = line.split("\t");
     if (parts.length < 9) continue;
 
-    const [refName, source, type, start1, end1, score, strandChar, phase, attrString] = parts;
+    const [
+      refName,
+      source,
+      type,
+      start1,
+      end1,
+      score,
+      strandChar,
+      phase,
+      attrString,
+    ] = parts;
     if (refName !== opts.refName) continue;
     if (wantedTypes && !wantedTypes.has(type)) continue;
 
@@ -163,11 +188,7 @@ export async function queryGffRegionFromPlainGff(opts: {
     if (end <= opts.start || start >= opts.end) continue;
 
     const strand: 1 | -1 | 0 =
-      strandChar === '+'
-        ? 1
-        : strandChar === '-'
-          ? -1
-          : 0;
+      strandChar === "+" ? 1 : strandChar === "-" ? -1 : 0;
 
     const attributes = parseGffAttributes(attrString);
 
@@ -188,4 +209,3 @@ export async function queryGffRegionFromPlainGff(opts: {
 
   return features;
 }
-

@@ -1,17 +1,20 @@
-import { useEffect } from 'react';
-import { extractLocusFromFeature } from '../utils/featureAttrUtils';
+import { useEffect } from "react";
+import { extractLocusFromFeature } from "../utils/featureAttrUtils";
 import {
   TABLE_SELECTION_COOLDOWN_MS,
   SESSION_SELECTION_POLL_MS,
-} from '../constants';
+} from "../constants";
 
 export function useGeneViewerSessionSync(opts: {
   viewState: any;
   lastTableSelectionTimeRef: React.MutableRefObject<number>;
-  setSelectedGeneId: (v: string | null | ((prev: string | null) => string | null)) => void;
+  setSelectedGeneId: (
+    v: string | null | ((prev: string | null) => string | null),
+  ) => void;
   joinAttr: string;
 }) {
-  const { viewState, lastTableSelectionTimeRef, setSelectedGeneId, joinAttr } = opts;
+  const { viewState, lastTableSelectionTimeRef, setSelectedGeneId, joinAttr } =
+    opts;
 
   useEffect(() => {
     if (!viewState) return;
@@ -28,10 +31,15 @@ export function useGeneViewerSessionSync(opts: {
 
     const tick = () => {
       try {
-        if (Date.now() - lastTableSelectionTimeRef.current < TABLE_SELECTION_COOLDOWN_MS) return;
+        if (
+          Date.now() - lastTableSelectionTimeRef.current <
+          TABLE_SELECTION_COOLDOWN_MS
+        )
+          return;
         const locus = getLocusFromSelection();
         if (locus) {
-          if (typeof window !== 'undefined') (window as any).selectedGeneId = locus;
+          if (typeof window !== "undefined")
+            (window as any).selectedGeneId = locus;
           setSelectedGeneId((prev) => (prev === locus ? prev : locus));
         }
       } catch {

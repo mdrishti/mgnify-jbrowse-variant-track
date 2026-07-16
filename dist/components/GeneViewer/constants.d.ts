@@ -30,21 +30,21 @@ export declare const FEATURE_PANEL_WIDTH_PX = 380;
 /** Default viewer height (px). */
 export declare const DEFAULT_VIEWER_HEIGHT_PX = 720;
 export declare const COLORS: {
-    readonly border: "#e5e7eb";
-    readonly borderLight: "#f3f4f6";
-    readonly textMuted: "#6b7280";
-    readonly textPrimary: "#374151";
-    readonly textDark: "#111827";
-    readonly background: "#ffffff";
-    readonly backgroundLight: "#f9fafb";
-    readonly errorBg: "#fff7ed";
-    readonly errorBorder: "#fed7aa";
-    readonly errorText: "#9a3412";
-    readonly highlight: "#2563eb";
-    readonly selectedRow: "#eef2ff";
+  readonly border: "#e5e7eb";
+  readonly borderLight: "#f3f4f6";
+  readonly textMuted: "#6b7280";
+  readonly textPrimary: "#374151";
+  readonly textDark: "#111827";
+  readonly background: "#ffffff";
+  readonly backgroundLight: "#f9fafb";
+  readonly errorBg: "#fff7ed";
+  readonly errorBorder: "#fed7aa";
+  readonly errorText: "#9a3412";
+  readonly highlight: "#2563eb";
+  readonly selectedRow: "#eef2ff";
 };
 /** Shared table/cell styles for GenesInViewTable and FeaturePanel */
 export declare const TABLE_STYLES: {
-    readonly cellPadding: "6px 8px";
-    readonly fontSize: 12;
+  readonly cellPadding: "6px 8px";
+  readonly fontSize: 12;
 };

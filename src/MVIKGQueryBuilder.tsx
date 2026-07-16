@@ -41,7 +41,8 @@ const TEMPLATES: Template[] = [
   {
     id: "variants_by_organism_gene",
     label: "Variants by organism + gene",
-    description: "All variants involving a specific gene in a specific organism.",
+    description:
+      "All variants involving a specific gene in a specific organism.",
     inputs: ["organism", "gene"],
     build: (org, _taxonUri, geneUri) => `${PREFIXES}
 SELECT ?article ?sectionType ?sourceFrom ?sample ?taxon ?geneNode ?variant ?geneURI ?jbrowseUrl (COUNT(DISTINCT ?sample) AS ?nSampleNodes)
@@ -108,7 +109,8 @@ ORDER BY ?article DESC(?nSampleNodes)
   {
     id: "structural_variants_by_organism",
     label: "All structural variants for an organism",
-    description: "Every structural variant mentioned in papers about this organism.",
+    description:
+      "Every structural variant mentioned in papers about this organism.",
     inputs: ["organism"],
     build: (org, _taxonUri, _geneUri) => `${PREFIXES}
     PREFIX dcterms: <http://purl.org/dc/terms/>
@@ -139,8 +141,8 @@ WHERE {
   OPTIONAL { ?sample dcterms:identifier ?accession . }
   BIND(REPLACE(STR(?taxonLabel), " ", "_") AS ?orgKey)
   BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey)) AS ?jbrowseUrl)
-}`
-},
+}`,
+  },
   {
     id: "papers_by_gene",
     label: "Papers mentioning a gene",
@@ -190,7 +192,8 @@ ORDER BY DESC(?sampleCount)`,
   {
     id: "variants_by_genus",
     label: "All variants for a genus / species",
-    description: "Every strain matching a genus or species name, with variant counts and JBrowse links.",
+    description:
+      "Every strain matching a genus or species name, with variant counts and JBrowse links.",
     inputs: ["genus"],
     build: (genus) => `${PREFIXES}
 SELECT ?strainLabel ?accession (COUNT(DISTINCT ?variant) AS ?variantCount) ?jbrowseUrl
@@ -209,7 +212,8 @@ ORDER BY ?strainLabel`,
   {
     id: "genes_cooccurring",
     label: "Genes co-occurring with organism in a paper",
-    description: "All genes annotated alongside this organism in the same paper.",
+    description:
+      "All genes annotated alongside this organism in the same paper.",
     inputs: ["organism"],
     build: (_org, taxonUri, _geneUri) => `${PREFIXES}
 SELECT ?geneLabel (COUNT(DISTINCT ?doc) AS ?paperCount) WHERE {
@@ -228,18 +232,37 @@ ORDER BY DESC(?paperCount)`,
 // Custom query helpers — apply graph edits to the custom SPARQL text
 // ---------------------------------------------------------------------------
 
-function renameVariableInSparql(sparql: string, oldName: string, newName: string): string {
+function renameVariableInSparql(
+  sparql: string,
+  oldName: string,
+  newName: string,
+): string {
   // Replace ?oldName as a whole word throughout the query
   const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return sparql.replace(new RegExp(`\\?${escaped}(?=[^a-zA-Z0-9_])`, "g"), `?${newName}`);
+  return sparql.replace(
+    new RegExp(`\\?${escaped}(?=[^a-zA-Z0-9_])`, "g"),
+    `?${newName}`,
+  );
 }
 
-function changePredicateInSparql(sparql: string, oldPred: string, newPred: string): string {
+function changePredicateInSparql(
+  sparql: string,
+  oldPred: string,
+  newPred: string,
+): string {
   const escaped = oldPred.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return sparql.replace(new RegExp(`(\\s)${escaped}(\\s)`, "g"), `$1${newPred}$2`);
+  return sparql.replace(
+    new RegExp(`(\\s)${escaped}(\\s)`, "g"),
+    `$1${newPred}$2`,
+  );
 }
 
-function addTripleToSparql(sparql: string, subject: string, predicate: string, object: string): string {
+function addTripleToSparql(
+  sparql: string,
+  subject: string,
+  predicate: string,
+  object: string,
+): string {
   // Insert new triple just before the closing } of WHERE { … }
   const upper = sparql.toUpperCase();
   const whereIdx = upper.indexOf("WHERE");
@@ -248,7 +271,13 @@ function addTripleToSparql(sparql: string, subject: string, predicate: string, o
   let closeIdx = -1;
   for (let i = whereIdx; i < sparql.length; i++) {
     if (sparql[i] === "{") depth++;
-    else if (sparql[i] === "}") { depth--; if (depth === 0) { closeIdx = i; break; } }
+    else if (sparql[i] === "}") {
+      depth--;
+      if (depth === 0) {
+        closeIdx = i;
+        break;
+      }
+    }
   }
   if (closeIdx === -1) return sparql;
   const line = `  ?${subject} ${predicate} ?${object} .\n`;
@@ -259,7 +288,12 @@ function addTripleToSparql(sparql: string, subject: string, predicate: string, o
 // QLever helpers
 // ---------------------------------------------------------------------------
 
-async function runSparql(query: string): Promise<{ vars: string[]; rows: Record<string, { type: string; value: string }>[] }> {
+async function runSparql(
+  query: string,
+): Promise<{
+  vars: string[];
+  rows: Record<string, { type: string; value: string }>[];
+}> {
   const params = new URLSearchParams({ query, action: "sparql_json" });
   const resp = await fetch(`${QLEVER_ENDPOINT}/sparql?${params}`, {
     headers: { Accept: "application/sparql-results+json" },
@@ -267,26 +301,33 @@ async function runSparql(query: string): Promise<{ vars: string[]; rows: Record<
   if (!resp.ok) throw new Error(`QLever returned ${resp.status}`);
   const data = await resp.json();
   const vars: string[] = data.head?.vars ?? [];
-  const rows = (data.results?.bindings ?? []) as Record<string, { type: string; value: string }>[];
+  const rows = (data.results?.bindings ?? []) as Record<
+    string,
+    { type: string; value: string }
+  >[];
   return { vars, rows };
 }
 
-async function fetchTaxonSuggestions(text: string): Promise<{ label: string; uri: string }[]> {
+async function fetchTaxonSuggestions(
+  text: string,
+): Promise<{ label: string; uri: string }[]> {
   if (text.length < 2) return [];
   const query = `PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX biolink: <https://biolink.github.io/biolink-model/biolink/>
 SELECT DISTINCT ?taxon ?label WHERE {
   ?sample biolink:in_taxon ?taxon .
   OPTIONAL { ?taxon rdfs:label ?label . }
-  FILTER(CONTAINS(LCASE(COALESCE(STR(?label), STR(?taxon))), LCASE("${text.replace(/"/g, '')}")))
+  FILTER(CONTAINS(LCASE(COALESCE(STR(?label), STR(?taxon))), LCASE("${text.replace(/"/g, "")}")))
 }
 LIMIT 10`;
   try {
     const { rows } = await runSparql(query);
-    return rows.map((r) => ({
-      uri: r.taxon?.value ?? "",
-      label: r.label?.value ?? r.taxon?.value ?? "",
-    })).filter((r) => r.uri);
+    return rows
+      .map((r) => ({
+        uri: r.taxon?.value ?? "",
+        label: r.label?.value ?? r.taxon?.value ?? "",
+      }))
+      .filter((r) => r.uri);
   } catch {
     return [];
   }
@@ -305,8 +346,17 @@ interface TypeaheadProps {
   disabled?: boolean;
 }
 
-function TypeaheadInput({ value, onChange, onSelectUri, fetchSuggestions, placeholder, disabled }: TypeaheadProps) {
-  const [suggestions, setSuggestions] = useState<{ label: string; uri: string }[]>([]);
+function TypeaheadInput({
+  value,
+  onChange,
+  onSelectUri,
+  fetchSuggestions,
+  placeholder,
+  disabled,
+}: TypeaheadProps) {
+  const [suggestions, setSuggestions] = useState<
+    { label: string; uri: string }[]
+  >([]);
   const [open, setOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -366,8 +416,16 @@ function TypeaheadInput({ value, onChange, onSelectUri, fetchSuggestions, placeh
 
 const MANIFEST_URL = "/sample-data/variants/manifest.json";
 
-function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { type: string; value: string }>[] }) {
-  const [manifest, setManifest] = useState<Record<string, unknown> | null>(null);
+function ResultsTable({
+  vars,
+  rows,
+}: {
+  vars: string[];
+  rows: Record<string, { type: string; value: string }>[];
+}) {
+  const [manifest, setManifest] = useState<Record<string, unknown> | null>(
+    null,
+  );
 
   useEffect(() => {
     fetch(MANIFEST_URL)
@@ -383,11 +441,15 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
   return (
     <div style={{ overflowX: "auto", marginTop: 16 }}>
       <p style={{ color: "#6b7280", marginBottom: 8 }}>{rows.length} row(s)</p>
-      <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+      <table
+        style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}
+      >
         <thead>
           <tr>
             {vars.map((v) => (
-              <th key={v} style={thStyle}>{v}</th>
+              <th key={v} style={thStyle}>
+                {v}
+              </th>
             ))}
             {hasJbrowse && <th style={thStyle}>Visualise</th>}
           </tr>
@@ -399,26 +461,43 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
             let orgKey = "";
             try {
               orgKey = new URL(jbrowseVal).searchParams.get("organism") ?? "";
-            } catch { /* not a valid URL */ }
-            const inManifest = manifest !== null && orgKey !== "" && orgKey in manifest;
+            } catch {
+              /* not a valid URL */
+            }
+            const inManifest =
+              manifest !== null && orgKey !== "" && orgKey in manifest;
 
             return (
-              <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb" }}>
+              <tr
+                key={i}
+                style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb" }}
+              >
                 {vars.map((v) => {
                   const cell = row[v];
                   const val = cell?.value ?? "";
                   const isUri = cell?.type === "uri";
                   // jbrowseUrl column: always show the organism key as plain text (link handled in extra column)
                   if (v === "jbrowseUrl") {
-                    return <td key={v} style={tdStyle}>{orgKey || val}</td>;
+                    return (
+                      <td key={v} style={tdStyle}>
+                        {orgKey || val}
+                      </td>
+                    );
                   }
                   return (
                     <td key={v} style={tdStyle}>
                       {isUri ? (
-                        <a href={val} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>
+                        <a
+                          href={val}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "#2563eb" }}
+                        >
                           {val.split("/").pop() || val}
                         </a>
-                      ) : val}
+                      ) : (
+                        val
+                      )}
                     </td>
                   );
                 })}
@@ -440,7 +519,9 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {inManifest ? "View in JBrowse" : "View variants (KG only)"}
+                        {inManifest
+                          ? "View in JBrowse"
+                          : "View variants (KG only)"}
                       </a>
                     )}
                   </td>
@@ -468,7 +549,10 @@ export default function MVIKGQueryBuilder() {
   const [customSparql, setCustomSparql] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<{ vars: string[]; rows: Record<string, { type: string; value: string }>[] } | null>(null);
+  const [results, setResults] = useState<{
+    vars: string[];
+    rows: Record<string, { type: string; value: string }>[];
+  } | null>(null);
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
 
@@ -484,7 +568,7 @@ export default function MVIKGQueryBuilder() {
     setSparql(template.build(organism, taxonUri, geneUri));
     setResults(null);
     setError(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId]);
 
   const handleRun = async () => {
@@ -521,15 +605,27 @@ export default function MVIKGQueryBuilder() {
     setCustomSparql((prev) => changePredicateInSparql(prev, oldPred, newPred));
   };
 
-  const handleAddTriple = (subject: string, predicate: string, object: string) => {
-    setCustomSparql((prev) => addTripleToSparql(prev, subject, predicate, object));
+  const handleAddTriple = (
+    subject: string,
+    predicate: string,
+    object: string,
+  ) => {
+    setCustomSparql((prev) =>
+      addTripleToSparql(prev, subject, predicate, object),
+    );
   };
 
   const needsOrganism = template.inputs.includes("organism");
   const needsGene = template.inputs.includes("gene");
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", padding: 24, maxWidth: 1400 }}>
+    <div
+      style={{
+        fontFamily: "system-ui, sans-serif",
+        padding: 24,
+        maxWidth: 1400,
+      }}
+    >
       <h2 style={{ marginTop: 0 }}>MVIKG Query Builder</h2>
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
@@ -542,7 +638,9 @@ export default function MVIKGQueryBuilder() {
             style={{ ...inputStyle, cursor: "pointer" }}
           >
             {TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
             ))}
           </select>
           <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 16px" }}>
@@ -594,7 +692,9 @@ export default function MVIKGQueryBuilder() {
                 placeholder="e.g. Bacteroides thetaiotaomicron"
               />
               {taxonUri && (
-                <p style={{ fontSize: 11, color: "#6b7280", margin: "4px 0 0" }}>
+                <p
+                  style={{ fontSize: 11, color: "#6b7280", margin: "4px 0 0" }}
+                >
                   {taxonUri.split("/").pop()}
                 </p>
               )}
@@ -603,7 +703,9 @@ export default function MVIKGQueryBuilder() {
 
           {needsGene && (
             <>
-              <label style={{ ...labelStyle, marginTop: needsOrganism ? 16 : 0 }}>
+              <label
+                style={{ ...labelStyle, marginTop: needsOrganism ? 16 : 0 }}
+              >
                 Gene / region
               </label>
               <input
@@ -622,7 +724,9 @@ export default function MVIKGQueryBuilder() {
         </div>
 
         {/* ── Right panel ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div
+          style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}
+        >
           <label style={labelStyle}>
             SPARQL&nbsp;
             <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12 }}>
@@ -660,7 +764,16 @@ export default function MVIKGQueryBuilder() {
           )}
 
           {error && (
-            <pre style={{ color: "#991b1b", background: "#fef2f2", padding: 12, borderRadius: 6, fontSize: 12, overflow: "auto" }}>
+            <pre
+              style={{
+                color: "#991b1b",
+                background: "#fef2f2",
+                padding: 12,
+                borderRadius: 6,
+                fontSize: 12,
+                overflow: "auto",
+              }}
+            >
               {error}
             </pre>
           )}
@@ -670,10 +783,24 @@ export default function MVIKGQueryBuilder() {
       {/* ── Custom query section ── */}
       {showCustom && (
         <div style={customSectionStyle}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              marginBottom: 6,
+            }}
+          >
             <label style={{ ...labelStyle, color: "#059669" }}>
               ✎ Custom query
-              <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 12, marginLeft: 8 }}>
+              <span
+                style={{
+                  fontWeight: 400,
+                  color: "#6b7280",
+                  fontSize: 12,
+                  marginLeft: 8,
+                }}
+              >
                 (independent copy — template above is unchanged)
               </span>
             </label>
@@ -682,8 +809,9 @@ export default function MVIKGQueryBuilder() {
             </button>
           </div>
           <p style={{ color: "#6b7280", fontSize: 12, margin: "0 0 8px" }}>
-            Edit directly in the textarea, or use the graph below — double-click a node to rename a variable,
-            double-click a predicate label to change it. PREFIX, SELECT, FILTER and BIND lines are preserved.
+            Edit directly in the textarea, or use the graph below — double-click
+            a node to rename a variable, double-click a predicate label to
+            change it. PREFIX, SELECT, FILTER and BIND lines are preserved.
           </p>
           <textarea
             value={customSparql}
@@ -692,7 +820,14 @@ export default function MVIKGQueryBuilder() {
             spellCheck={false}
             style={{ ...textareaStyle, borderColor: "#6ee7b7" }}
           />
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginTop: 8,
+            }}
+          >
             <button
               onClick={handleRun}
               disabled={running || !customSparql.trim()}
@@ -700,7 +835,9 @@ export default function MVIKGQueryBuilder() {
             >
               {running ? "Running…" : "▶  Run custom query"}
             </button>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>Endpoint: {QLEVER_ENDPOINT}</span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>
+              Endpoint: {QLEVER_ENDPOINT}
+            </span>
           </div>
         </div>
       )}

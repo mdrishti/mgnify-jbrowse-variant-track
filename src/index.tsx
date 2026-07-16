@@ -17,7 +17,14 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError && this.state.error) {
       return (
-        <div style={{ padding: 24, fontFamily: "monospace", background: "#fef2f2", color: "#991b1b" }}>
+        <div
+          style={{
+            padding: 24,
+            fontFamily: "monospace",
+            background: "#fef2f2",
+            color: "#991b1b",
+          }}
+        >
           <h2>Something went wrong</h2>
           <pre style={{ overflow: "auto", whiteSpace: "pre-wrap" }}>
             {this.state.error.toString()}
@@ -40,11 +47,13 @@ function Router() {
   return <App />;
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+const root = ReactDOM.createRoot(
+  document.getElementById("root") as HTMLElement,
+);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <Router />
     </ErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
