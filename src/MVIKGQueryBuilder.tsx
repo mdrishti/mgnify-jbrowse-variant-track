@@ -33,7 +33,7 @@ interface Template {
   id: string;
   label: string;
   description: string;
-  inputs: ("organism" | "gene")[];
+  inputs: ("organism" | "gene" | "genus")[];
   build: (organism: string, taxonUri: string, geneUri: string) => string;
 }
 
@@ -186,6 +186,25 @@ SELECT ?taxon ?taxonLabel (COUNT(DISTINCT ?sample) AS ?sampleCount) WHERE {
 }
 GROUP BY ?taxon ?taxonLabel
 ORDER BY DESC(?sampleCount)`,
+  },
+  {
+    id: "variants_by_genus",
+    label: "All variants for a genus / species",
+    description: "Every strain matching a genus or species name, with variant counts and JBrowse links.",
+    inputs: ["genus"],
+    build: (genus) => `${PREFIXES}
+SELECT ?strainLabel ?accession (COUNT(DISTINCT ?variant) AS ?variantCount) ?jbrowseUrl
+WHERE {
+  ?taxon rdfs:label ?strainLabel .
+  ?taxon <http://purl.org/dc/terms/identifier> ?accession .
+  ?taxon <http://www.w3.org/ns/sosa/hasFeatureOfInterest> ?geneNode .
+  ?geneNode biolink:has_sequence_variant ?variant .
+  FILTER(CONTAINS(LCASE(STR(?strainLabel)), LCASE("${genus}")))
+  BIND(REPLACE(STR(?strainLabel), " ", "_") AS ?orgKey)
+  BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey, "&accession=", STR(?accession))) AS ?jbrowseUrl)
+}
+GROUP BY ?strainLabel ?accession ?jbrowseUrl
+ORDER BY ?strainLabel`,
   },
   {
     id: "genes_cooccurring",
@@ -405,7 +424,7 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
                 })}
                 {hasJbrowse && (
                   <td style={tdStyle}>
-                    {inManifest ? (
+                    {orgKey && (
                       <a
                         href={jbrowseVal}
                         target="_blank"
@@ -413,7 +432,7 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
                         style={{
                           display: "inline-block",
                           padding: "3px 10px",
-                          background: "#2563eb",
+                          background: inManifest ? "#2563eb" : "#6b7280",
                           color: "#fff",
                           borderRadius: 4,
                           fontSize: 12,
@@ -421,12 +440,8 @@ function ResultsTable({ vars, rows }: { vars: string[]; rows: Record<string, { t
                           whiteSpace: "nowrap",
                         }}
                       >
-                        View in JBrowse
+                        {inManifest ? "View in JBrowse" : "View variants (KG only)"}
                       </a>
-                    ) : (
-                      <span style={{ color: "#9ca3af", fontSize: 12 }}>
-                        {manifest === null ? "…" : "not available"}
-                      </span>
                     )}
                   </td>
                 )}
@@ -533,6 +548,40 @@ export default function MVIKGQueryBuilder() {
           <p style={{ color: "#6b7280", fontSize: 13, margin: "6px 0 16px" }}>
             {template.description}
           </p>
+
+          {template.inputs.includes("genus") && (
+            <>
+              <label style={labelStyle}>Genus / species</label>
+              <input
+                type="text"
+                value={organism}
+                onChange={(e) => setOrganism(e.target.value)}
+                placeholder="e.g. Bacteroides"
+                style={inputStyle}
+              />
+              {organism && (
+                <a
+                  href={`/?genus=${encodeURIComponent(organism)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    marginTop: 8,
+                    padding: "7px 14px",
+                    background: "#7c3aed",
+                    color: "#fff",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    textAlign: "center",
+                  }}
+                >
+                  View all strains in JBrowse ↗
+                </a>
+              )}
+            </>
+          )}
 
           {needsOrganism && (
             <>

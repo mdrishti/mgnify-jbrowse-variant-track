@@ -29,6 +29,7 @@
 import "@fontsource/roboto";
 import React, { useEffect, useState } from "react";
 import { createViewState, JBrowseApp } from "@jbrowse/react-app2";
+import VariantsPlugin from "@jbrowse/plugin-variants";
 import { GeneViewer } from "./components/GeneViewer";
 
 // Base URL where per-taxon data directories are served.
@@ -71,7 +72,7 @@ async function checkGffExists(url: string): Promise<boolean> {
 // Builds a minimal JBrowse LinearGenomeView with FASTA + VariantTrack.
 // ---------------------------------------------------------------------------
 
-interface VariantOnlyViewerProps {
+export interface VariantOnlyViewerProps {
   taxon: string;
   accession: string;
   fastaUrl: string;
@@ -83,7 +84,7 @@ interface VariantOnlyViewerProps {
   displayName: string;
 }
 
-function VariantOnlyViewer({
+export function VariantOnlyViewer({
   taxon,
   accession,
   fastaUrl,
@@ -107,77 +108,82 @@ function VariantOnlyViewer({
 
     try {
       const state = createViewState({
-        assembly: {
-          name: taxon,
-          sequence: {
-            type: "ReferenceSequenceTrack",
-            trackId: "ReferenceSequenceTrack",
-            adapter: {
-              type: "BgzipFastaAdapter",
-              fastaLocation: { uri: fastaUrl },
-              faiLocation: { uri: faiUrl },
-              gziLocation: { uri: gziUrl },
-            },
-          },
-        },
-        tracks: [
-          {
-            type: "VariantTrack",
-            trackId: "variants",
-            name: `${displayName} variants`,
-            assemblyNames: [taxon],
-            adapter: {
-              type: "VcfTabixAdapter",
-              vcfGzLocation: { uri: vcfUrl },
-              index: {
-                indexType: "TBI",
-                location: { uri: tbiUrl },
-              },
-            },
-            displays: [
-              {
-                displayId: "variants-LinearVariantDisplay",
-                type: "LinearVariantDisplay",
-                height: 200,
-              },
-            ],
-          },
-        ],
-        defaultSession: {
-          name: "MVIKG session",
-          views: [
+        plugins: [VariantsPlugin],
+        config: {
+          assemblies: [
             {
-              type: "LinearGenomeView",
-              displayedRegions: [
-                { refName, start, end, assemblyName: taxon },
-              ],
-              tracks: [
-                {
-                  type: "ReferenceSequenceTrack",
-                  configuration: "ReferenceSequenceTrack",
-                  displays: [
-                    {
-                      id: "ReferenceSequenceTrack",
-                      type: "LinearReferenceSequenceDisplay",
-                      height: 100,
-                    },
-                  ],
+              name: taxon,
+              sequence: {
+                type: "ReferenceSequenceTrack",
+                trackId: "ReferenceSequenceTrack",
+                adapter: {
+                  type: "BgzipFastaAdapter",
+                  fastaLocation: { uri: fastaUrl },
+                  faiLocation: { uri: faiUrl },
+                  gziLocation: { uri: gziUrl },
                 },
+              },
+            },
+          ],
+          tracks: [
+            {
+              type: "VariantTrack",
+              trackId: "variants",
+              name: `${displayName} variants`,
+              assemblyNames: [taxon],
+              adapter: {
+                type: "VcfTabixAdapter",
+                vcfGzLocation: { uri: vcfUrl },
+                index: {
+                  indexType: "TBI",
+                  location: { uri: tbiUrl },
+                },
+              },
+              displays: [
                 {
-                  id: "variants",
-                  type: "VariantTrack",
-                  configuration: "variants",
-                  displays: [
-                    {
-                      displayId: "variants-LinearVariantDisplay",
-                      type: "LinearVariantDisplay",
-                      height: 200,
-                    },
-                  ],
+                  displayId: "variants-LinearVariantDisplay",
+                  type: "LinearVariantDisplay",
+                  height: 200,
                 },
               ],
             },
           ],
+          defaultSession: {
+            name: "MVIKG session",
+            views: [
+              {
+                type: "LinearGenomeView",
+                displayedRegions: [
+                  { refName, start, end, assemblyName: taxon },
+                ],
+                tracks: [
+                  {
+                    type: "ReferenceSequenceTrack",
+                    configuration: "ReferenceSequenceTrack",
+                    displays: [
+                      {
+                        id: "ReferenceSequenceTrack",
+                        type: "LinearReferenceSequenceDisplay",
+                        height: 100,
+                      },
+                    ],
+                  },
+                  {
+                    id: "variants",
+                    type: "VariantTrack",
+                    configuration: "variants",
+                    displays: [
+                      {
+                        displayId: "variants-LinearVariantDisplay",
+                        type: "LinearVariantDisplay",
+                        height: 200,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
         },
       });
       setViewState(state);
