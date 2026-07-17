@@ -191,9 +191,9 @@ ORDER BY DESC(?sampleCount)`,
   },
   {
     id: "variants_by_genus",
-    label: "All variants for a genus / species",
+    label: "Variant summary by genus / species (per contig)",
     description:
-      "Every strain matching a genus or species name, with variant counts and JBrowse links.",
+      "One row per strain+contig with total variant count. Use to get an overview before drilling in.",
     inputs: ["genus"],
     build: (genus) => `${PREFIXES}
 SELECT ?strainLabel ?accession (COUNT(DISTINCT ?variant) AS ?variantCount) ?jbrowseUrl
@@ -208,6 +208,32 @@ WHERE {
 }
 GROUP BY ?strainLabel ?accession ?jbrowseUrl
 ORDER BY ?strainLabel`,
+  },
+  {
+    id: "variants_by_genus_positions",
+    label: "Variant positions by genus / species (per variant)",
+    description:
+      "One row per variant with genomic coordinates. View in JBrowse navigates directly to that variant's position.",
+    inputs: ["genus"],
+    build: (genus) => `${PREFIXES}
+SELECT ?strainLabel ?accession ?start ?stop ?svTypeName ?effect ?jbrowseUrl
+WHERE {
+  ?taxon rdfs:label ?strainLabel .
+  ?taxon <http://purl.org/dc/terms/identifier> ?accession .
+  ?taxon <http://www.w3.org/ns/sosa/hasFeatureOfInterest> ?geneNode .
+  ?geneNode biolink:has_sequence_variant ?variant .
+  ?variant biolink:start_coordinate ?start .
+  ?variant biolink:end_coordinate   ?stop .
+  FILTER(CONTAINS(LCASE(STR(?strainLabel)), LCASE("${genus}")))
+  OPTIONAL { ?variant mvikg:sequenceVariantTypeName ?svTypeName }
+  OPTIONAL { ?variant mvikg:effect ?effect }
+  BIND(REPLACE(STR(?strainLabel), " ", "_") AS ?orgKey)
+  BIND(IRI(CONCAT("http://localhost:5173/?organism=", ?orgKey,
+                  "&accession=", STR(?accession),
+                  "&start=", STR(?start),
+                  "&end=", STR(?stop))) AS ?jbrowseUrl)
+}
+ORDER BY ?strainLabel ?accession ?start`,
   },
   {
     id: "genes_cooccurring",
@@ -424,6 +450,7 @@ function ResultsTable({
   const [manifest, setManifest] = useState<Record<string, unknown> | null>(
     null,
   );
+  const [visited, setVisited] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch(MANIFEST_URL)
@@ -510,20 +537,33 @@ function ResultsTable({
                         href={jbrowseVal}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() =>
+                          setVisited((prev) => new Set(prev).add(jbrowseVal))
+                        }
                         style={{
                           display: "inline-block",
                           padding: "3px 10px",
-                          background: hasFasta ? "#2563eb" : "#6b7280",
+                          background: visited.has(jbrowseVal)
+                            ? "#6d28d9"
+                            : hasFasta
+                              ? "#2563eb"
+                              : "#6b7280",
                           color: "#fff",
                           borderRadius: 4,
                           fontSize: 12,
                           textDecoration: "none",
                           whiteSpace: "nowrap",
+                          opacity: visited.has(jbrowseVal) ? 0.85 : 1,
                         }}
+                        title={
+                          visited.has(jbrowseVal) ? "Already viewed" : undefined
+                        }
                       >
-                        {hasFasta
-                          ? "View in JBrowse"
-                          : "View variants (KG only)"}
+                        {visited.has(jbrowseVal)
+                          ? "✓ Viewed"
+                          : hasFasta
+                            ? "View in JBrowse"
+                            : "View variants (KG only)"}
                       </a>
                     )}
                   </td>
@@ -630,8 +670,17 @@ export default function MVIKGQueryBuilder() {
     >
       <h2 style={{ marginTop: 0 }}>MVIKG Query Builder</h2>
 
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        {/* ── Left panel ── */}
+      {/* ── Three-panel top row ── */}
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          alignItems: "stretch",
+          height: "60vh",
+          minHeight: 420,
+        }}
+      >
+        {/* ── Panel 1: template + inputs ── */}
         <div style={leftPanelStyle}>
           <label style={labelStyle}>Query template</label>
           <select
@@ -725,9 +774,16 @@ export default function MVIKGQueryBuilder() {
           </button>
         </div>
 
-        {/* ── Right panel ── */}
+        {/* ── Panel 2: SPARQL textarea + run ── */}
         <div
-          style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            minWidth: 0,
+            overflowY: "auto",
+          }}
         >
           <label style={labelStyle}>
             SPARQL&nbsp;
@@ -735,18 +791,68 @@ export default function MVIKGQueryBuilder() {
               (editable before running)
             </span>
           </label>
-          <textarea
-            value={sparql}
-            onChange={(e) => setSparql(e.target.value)}
-            rows={22}
-            spellCheck={false}
-            style={textareaStyle}
-          />
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {!showCustom ? (
+            <textarea
+              value={sparql}
+              onChange={(e) => setSparql(e.target.value)}
+              spellCheck={false}
+              style={{ ...textareaStyle, flex: 1, resize: "none" }}
+            />
+          ) : (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span
+                  style={{ ...labelStyle, color: "#059669", marginBottom: 0 }}
+                >
+                  ✎ Custom query
+                  <span
+                    style={{
+                      fontWeight: 400,
+                      color: "#6b7280",
+                      fontSize: 12,
+                      marginLeft: 8,
+                    }}
+                  >
+                    (independent copy)
+                  </span>
+                </span>
+                <button onClick={handleDiscardCustom} style={discardBtnStyle}>
+                  Discard
+                </button>
+              </div>
+              <textarea
+                value={customSparql}
+                onChange={(e) => setCustomSparql(e.target.value)}
+                spellCheck={false}
+                style={{
+                  ...textareaStyle,
+                  flex: 1,
+                  resize: "none",
+                  borderColor: "#6ee7b7",
+                }}
+              />
+            </>
+          )}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexShrink: 0,
+            }}
+          >
             <button
               onClick={handleRun}
-              disabled={running || !sparql.trim()}
-              style={runBtnStyle(running || !sparql.trim())}
+              disabled={running || !(showCustom ? customSparql : sparql).trim()}
+              style={runBtnStyle(
+                running || !(showCustom ? customSparql : sparql).trim(),
+              )}
             >
               {running ? "Running…" : "▶  Run query"}
             </button>
@@ -755,16 +861,28 @@ export default function MVIKGQueryBuilder() {
             </span>
           </div>
           {!showCustom && (
-            <div style={customisePromptStyle}>
+            <div style={{ ...customisePromptStyle, flexShrink: 0 }}>
               <span style={{ color: "#374151", fontSize: 13 }}>
-                Want to customise this query using the graph below?
+                Want to customise using the graph?
               </span>
               <button onClick={handleStartCustom} style={customiseBtnStyle}>
                 Yes, create a custom copy
               </button>
             </div>
           )}
-
+          {showCustom && (
+            <p
+              style={{
+                color: "#6b7280",
+                fontSize: 12,
+                margin: 0,
+                flexShrink: 0,
+              }}
+            >
+              Edit directly, or use the graph — double-click a node to rename a
+              variable, double-click a predicate to change it.
+            </p>
+          )}
           {error && (
             <pre
               style={{
@@ -774,86 +892,28 @@ export default function MVIKGQueryBuilder() {
                 borderRadius: 6,
                 fontSize: 12,
                 overflow: "auto",
+                flexShrink: 0,
               }}
             >
               {error}
             </pre>
           )}
         </div>
-      </div>
 
-      {/* ── Custom query section ── */}
-      {showCustom && (
-        <div style={customSectionStyle}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              marginBottom: 6,
-            }}
-          >
-            <label style={{ ...labelStyle, color: "#059669" }}>
-              ✎ Custom query
-              <span
-                style={{
-                  fontWeight: 400,
-                  color: "#6b7280",
-                  fontSize: 12,
-                  marginLeft: 8,
-                }}
-              >
-                (independent copy — template above is unchanged)
-              </span>
-            </label>
-            <button onClick={handleDiscardCustom} style={discardBtnStyle}>
-              Discard custom query
-            </button>
-          </div>
-          <p style={{ color: "#6b7280", fontSize: 12, margin: "0 0 8px" }}>
-            Edit directly in the textarea, or use the graph below — double-click
-            a node to rename a variable, double-click a predicate label to
-            change it. PREFIX, SELECT, FILTER and BIND lines are preserved.
-          </p>
-          <textarea
-            value={customSparql}
-            onChange={(e) => setCustomSparql(e.target.value)}
-            rows={22}
-            spellCheck={false}
-            style={{ ...textareaStyle, borderColor: "#6ee7b7" }}
+        {/* ── Panel 3: query graph ── */}
+        <div style={{ flex: 1, minWidth: 0, overflowY: "auto" }}>
+          <MVIKGQueryGraph
+            sparql={showCustom ? customSparql : sparql}
+            organism={organism}
+            geneUri={geneUri}
+            qleverEndpoint={QLEVER_ENDPOINT}
+            editMode={showCustom}
+            onNodeRename={showCustom ? handleNodeRename : undefined}
+            onPredicateChange={showCustom ? handlePredicateChange : undefined}
+            onAddTriple={showCustom ? handleAddTriple : undefined}
           />
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginTop: 8,
-            }}
-          >
-            <button
-              onClick={handleRun}
-              disabled={running || !customSparql.trim()}
-              style={runBtnStyle(running || !customSparql.trim())}
-            >
-              {running ? "Running…" : "▶  Run custom query"}
-            </button>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>
-              Endpoint: {QLEVER_ENDPOINT}
-            </span>
-          </div>
         </div>
-      )}
-
-      <MVIKGQueryGraph
-        sparql={showCustom ? customSparql : sparql}
-        organism={organism}
-        geneUri={geneUri}
-        qleverEndpoint={QLEVER_ENDPOINT}
-        editMode={showCustom}
-        onNodeRename={showCustom ? handleNodeRename : undefined}
-        onPredicateChange={showCustom ? handlePredicateChange : undefined}
-        onAddTriple={showCustom ? handleAddTriple : undefined}
-      />
+      </div>
 
       {/* ── Results ── */}
       {results && <ResultsTable vars={results.vars} rows={results.rows} />}
@@ -866,10 +926,11 @@ export default function MVIKGQueryBuilder() {
 // ---------------------------------------------------------------------------
 
 const leftPanelStyle: React.CSSProperties = {
-  width: 280,
+  width: 260,
   flexShrink: 0,
   display: "flex",
   flexDirection: "column",
+  overflowY: "auto",
 };
 
 const labelStyle: React.CSSProperties = {

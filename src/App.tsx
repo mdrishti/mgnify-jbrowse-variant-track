@@ -331,12 +331,22 @@ function VariantNavigator({
   accession,
   variants,
   viewState,
+  initialStart,
 }: {
   accession: string;
   variants: ContigVariant[];
   viewState: ReturnType<typeof createViewState> | null;
+  initialStart?: number; // 1-based; used to pre-select the clicked variant
 }) {
-  const [selected, setSelected] = useState(0);
+  // Find the variant matching the URL start param (1-based → compare against start+1)
+  const initialIdx =
+    initialStart !== undefined
+      ? Math.max(
+          0,
+          variants.findIndex((v) => v.start + 1 === initialStart),
+        )
+      : 0;
+  const [selected, setSelected] = useState(initialIdx);
 
   const navTo = useCallback(
     (idx: number) => {
@@ -361,9 +371,18 @@ function VariantNavigator({
     [accession, variants, viewState],
   );
 
+  // When variants load, update selected index to match the URL-specified start position
+  useEffect(() => {
+    if (variants.length === 0) return;
+    if (initialStart !== undefined) {
+      const idx = variants.findIndex((v) => v.start + 1 === initialStart);
+      if (idx >= 0) setSelected(idx);
+    }
+  }, [variants, initialStart]);
+
   // Auto-navigate when BOTH viewState AND variants are ready (whichever arrives last)
   useEffect(() => {
-    if (viewState && variants.length > 0) navTo(0);
+    if (viewState && variants.length > 0) navTo(selected);
   }, [viewState, variants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (variants.length === 0) return null;
@@ -453,11 +472,15 @@ function StrainViewer({
   entry,
   displayName,
   initialAccession,
+  initialStart,
+  initialEnd,
 }: {
   organism: string;
   entry: ManifestEntry;
   displayName: string;
   initialAccession?: string;
+  initialStart?: number;
+  initialEnd?: number;
 }) {
   const [primarySeq, setPrimarySeq] = useState<string>(initialAccession ?? "");
   const [variants, setVariants] = useState<ContigVariant[]>([]);
@@ -478,7 +501,7 @@ function StrainViewer({
       .catch(() => {});
   }, [entry.fai, initialAccession]);
 
-  // Fetch variants for this contig from KG once we know which sequence to show
+  // Always fetch all variants for the contig so the dropdown is fully populated.
   useEffect(() => {
     const accession = initialAccession || primarySeq;
     if (!accession) return;
@@ -503,6 +526,7 @@ function StrainViewer({
         accession={accession}
         variants={variants}
         viewState={viewState}
+        initialStart={initialStart}
       />
       <VariantOnlyViewer
         taxon={organism}
@@ -730,9 +754,13 @@ function PreparePanel({
 function OrganismViewer({
   organism,
   initialAccession,
+  initialStart,
+  initialEnd,
 }: {
   organism: string;
   initialAccession?: string;
+  initialStart?: number;
+  initialEnd?: number;
 }) {
   const [entry, setEntry] = useState<ManifestEntry | null>(null);
   const [manifestChecked, setManifestChecked] = useState(false);
@@ -789,6 +817,8 @@ function OrganismViewer({
           entry={entry}
           displayName={displayName}
           initialAccession={initialAccession}
+          initialStart={initialStart}
+          initialEnd={initialEnd}
         />
       ) : (
         <>
@@ -954,10 +984,21 @@ export default function App() {
   const _params = new URLSearchParams(window.location.search);
   const orgParam = _params.get("organism");
   const accessionParam = _params.get("accession") ?? undefined;
+  const startParam = _params.get("start")
+    ? parseInt(_params.get("start")!, 10)
+    : undefined;
+  const endParam = _params.get("end")
+    ? parseInt(_params.get("end")!, 10)
+    : undefined;
   const genusParam = _params.get("genus");
   if (orgParam)
     return (
-      <OrganismViewer organism={orgParam} initialAccession={accessionParam} />
+      <OrganismViewer
+        organism={orgParam}
+        initialAccession={accessionParam}
+        initialStart={startParam}
+        initialEnd={endParam}
+      />
     );
   if (genusParam) return <GenusBrowser genus={genusParam} />;
 
