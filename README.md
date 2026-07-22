@@ -108,6 +108,90 @@ The demo app runs at `http://localhost:5173` and uses the GeneViewer component. 
 
 ---
 
+## MVIKG variant explorer (local)
+
+The MVIKG (Microbial Variant and Interaction Knowledge Graph) variant explorer is a local research tool that queries a QLever SPARQL endpoint, visualises results in an interactive query builder, and links directly into JBrowse for genome-level variant inspection.
+
+### Prerequisites
+
+| Tool                                            | Purpose                                           |
+| ----------------------------------------------- | ------------------------------------------------- |
+| [QLever](https://github.com/ad-freiburg/qlever) | SPARQL backend serving the KG (default port 7035) |
+| `samtools`, `bgzip`, `tabix`                    | Indexing FASTAs and VCFs (part of htslib)         |
+| Python ≥ 3.10                                   | Running the variant pipeline scripts              |
+
+### Running the explorer
+
+**1. Start QLever** (in the directory where the KG index lives)
+
+```bash
+qlever start
+# Listens on http://localhost:7035 by default
+```
+
+**2. Start the JBrowse frontend**
+
+```bash
+cd mgnify-jbrowse-variant-track_<date>
+npm install       # first time only
+npm run dev
+# Open http://localhost:5173
+```
+
+**3. (Optional) Start the API server** — triggers VCF/FASTA preparation automatically when a user clicks "View in JBrowse" for an organism that has no pre-deployed files
+
+```bash
+cd mvikgViz/
+python api_server.py
+# Listens on http://localhost:8001
+```
+
+If QLever runs on a different port, set `VITE_QLEVER_ENDPOINT` in `.env.local`:
+
+```bash
+echo "VITE_QLEVER_ENDPOINT=http://localhost:7035" >> .env.local
+```
+
+### Using the query page
+
+Open **http://localhost:5173/query** in your browser.
+
+1. **Pick a template** from the left panel:
+   - _Variant summary by genus / species (per contig)_ — one row per strain + contig with total variant count
+   - _Variant positions by genus / species (per variant)_ — one row per variant with genomic coordinates
+   - Other templates for organism-level, gene-level, and paper-level queries
+
+2. **Enter a genus or organism** in the input field (e.g. `Bacteroides`)
+
+3. Click **Build query**, then **▶ Run query**
+
+4. Click **View in JBrowse** on any result row:
+   - Blue button — FASTA + VCF already deployed; JBrowse opens immediately
+   - Grey button — VCF available in KG only; opens a variant-only view
+   - If the API server is running, clicking either button triggers automatic FASTA + VCF preparation for organisms not yet deployed; reload and click again once ready
+
+5. For per-variant queries, JBrowse navigates directly to that variant's coordinates. A dropdown lets you jump to other variants on the same contig.
+
+### Pre-deploying VCFs for all organisms
+
+To batch-generate VCFs from the KG without waiting for on-demand triggers:
+
+```bash
+cd mvikgViz/
+
+# Generate VCFs for all organisms (or filter by genus)
+python kg_to_vcf_direct.py --endpoint http://localhost:7035 --outdir vcfs/
+python kg_to_vcf_direct.py --filter bacteroides --outdir vcfs/
+
+# Compress, index, and update the manifest
+bash compress_and_deploy.sh --jbrowse-dir ../mgnify-jbrowse-variant-track_<date> --deploy
+
+# Deploy FASTAs (copies bgzipped FASTAs + indices into public/sample-data/fasta_files/)
+python deploy_fastas.py
+```
+
+---
+
 ## Documentation
 
 | Document                                           | Description                                                                   |
