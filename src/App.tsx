@@ -15,6 +15,8 @@ interface ManifestEntry {
   fastaGz: string | null;
   fai: string | null;
   gzi: string | null;
+  gffGz: string | null;
+  gffTbi: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -467,6 +469,184 @@ function VariantNavigator({
   );
 }
 
+// ---------------------------------------------------------------------------
+// FullViewer — FASTA + GFF annotations + VCF variants, all via standard
+// JBrowse adapters. Avoids GeneViewer's re-init loop by building config once.
+// ---------------------------------------------------------------------------
+
+function FullViewer({
+  organism,
+  accession,
+  fastaUrl,
+  faiUrl,
+  gziUrl,
+  gffUrl,
+  csiUrl,
+  vcfUrl,
+  tbiUrl,
+  displayName,
+  onViewStateReady,
+}: {
+  organism: string;
+  accession: string;
+  fastaUrl: string;
+  faiUrl: string;
+  gziUrl: string;
+  gffUrl: string;
+  csiUrl: string;
+  vcfUrl: string;
+  tbiUrl: string;
+  displayName: string;
+  onViewStateReady?: (vs: ReturnType<typeof createViewState>) => void;
+}) {
+  const [viewState, setViewState] = useState<ReturnType<
+    typeof createViewState
+  > | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const state = createViewState({
+        plugins: [VariantsPlugin],
+        config: {
+          assemblies: [
+            {
+              name: organism,
+              sequence: {
+                type: "ReferenceSequenceTrack",
+                trackId: "ReferenceSequenceTrack",
+                adapter: {
+                  type: "BgzipFastaAdapter",
+                  fastaLocation: { uri: fastaUrl },
+                  faiLocation: { uri: faiUrl },
+                  gziLocation: { uri: gziUrl },
+                },
+              },
+            },
+          ],
+          tracks: [
+            {
+              type: "FeatureTrack",
+              trackId: "gene_features",
+              name: "Gene annotations",
+              assemblyNames: [organism],
+              adapter: {
+                type: "Gff3TabixAdapter",
+                gffGzLocation: { uri: gffUrl },
+                index: {
+                  indexType: "CSI",
+                  location: { uri: csiUrl },
+                },
+              },
+              displays: [
+                {
+                  displayId: "gene_features-LinearBasicDisplay",
+                  type: "LinearBasicDisplay",
+                  height: 200,
+                },
+              ],
+            },
+            {
+              type: "VariantTrack",
+              trackId: "variants",
+              name: `${displayName} variants`,
+              assemblyNames: [organism],
+              adapter: {
+                type: "VcfTabixAdapter",
+                vcfGzLocation: { uri: vcfUrl },
+                index: { indexType: "TBI", location: { uri: tbiUrl } },
+              },
+              displays: [
+                {
+                  displayId: "variants-LinearVariantDisplay",
+                  type: "LinearVariantDisplay",
+                  height: 150,
+                },
+              ],
+            },
+          ],
+          defaultSession: {
+            name: "MVIKG session",
+            views: [
+              {
+                type: "LinearGenomeView",
+                displayedRegions: [
+                  {
+                    refName: accession,
+                    start: 0,
+                    end: 500_000,
+                    assemblyName: organism,
+                  },
+                ],
+                tracks: [
+                  {
+                    type: "ReferenceSequenceTrack",
+                    configuration: "ReferenceSequenceTrack",
+                    displays: [
+                      {
+                        id: "ref-seq-display",
+                        type: "LinearReferenceSequenceDisplay",
+                        height: 100,
+                      },
+                    ],
+                  },
+                  {
+                    id: "gene_features",
+                    type: "FeatureTrack",
+                    configuration: "gene_features",
+                    displays: [
+                      {
+                        displayId: "gene_features-LinearBasicDisplay",
+                        type: "LinearBasicDisplay",
+                        height: 200,
+                      },
+                    ],
+                  },
+                  {
+                    id: "variants",
+                    type: "VariantTrack",
+                    configuration: "variants",
+                    displays: [
+                      {
+                        displayId: "variants-LinearVariantDisplay",
+                        type: "LinearVariantDisplay",
+                        height: 150,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      });
+      setViewState(state);
+      onViewStateReady?.(state);
+    } catch (e: any) {
+      setError(String(e?.message ?? e));
+    }
+  }, [
+    organism,
+    accession,
+    fastaUrl,
+    faiUrl,
+    gziUrl,
+    gffUrl,
+    csiUrl,
+    vcfUrl,
+    tbiUrl,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (error)
+    return <p style={{ color: "red", padding: 16 }}>JBrowse error: {error}</p>;
+  if (!viewState) return <p style={{ padding: 16 }}>Loading viewer…</p>;
+  return (
+    <div style={{ height: 600 }}>
+      <JBrowseApp viewState={viewState} />
+    </div>
+  );
+}
+
 function StrainViewer({
   organism,
   entry,
@@ -501,7 +681,7 @@ function StrainViewer({
       .catch(() => {});
   }, [entry.fai, initialAccession]);
 
-  // Always fetch all variants for the contig so the dropdown is fully populated.
+  // Fetch all variants for this contig (for dropdown + auto-nav)
   useEffect(() => {
     const accession = initialAccession || primarySeq;
     if (!accession) return;
@@ -515,19 +695,26 @@ function StrainViewer({
 
   const accession = initialAccession || primarySeq || organism;
 
-  // DEBUG: expose viewState on window so it can be inspected in DevTools
   useEffect(() => {
     if (viewState) (window as any)._jbViewState = viewState;
   }, [viewState]);
 
-  return (
-    <>
-      <VariantNavigator
+  const viewer =
+    entry.gffGz && entry.gffTbi ? (
+      <FullViewer
+        organism={organism}
         accession={accession}
-        variants={variants}
-        viewState={viewState}
-        initialStart={initialStart}
+        fastaUrl={entry.fastaGz!}
+        faiUrl={entry.fai!}
+        gziUrl={entry.gzi!}
+        gffUrl={entry.gffGz}
+        csiUrl={entry.gffTbi}
+        vcfUrl={entry.vcfGz ?? ""}
+        tbiUrl={entry.tbi ?? ""}
+        displayName={displayName}
+        onViewStateReady={setViewState}
       />
+    ) : (
       <VariantOnlyViewer
         taxon={organism}
         accession={accession}
@@ -540,6 +727,17 @@ function StrainViewer({
         displayName={displayName}
         onViewStateReady={setViewState}
       />
+    );
+
+  return (
+    <>
+      <VariantNavigator
+        accession={accession}
+        variants={variants}
+        viewState={viewState}
+        initialStart={initialStart}
+      />
+      {viewer}
     </>
   );
 }

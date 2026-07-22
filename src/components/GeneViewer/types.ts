@@ -127,4 +127,6 @@ export interface GeneViewerProps {
   initialRegionBp?: number;
   /** Fixed height for the overall viewer area. */
   heightPx?: number;
+  /** Called once when the JBrowse viewState is initialised (for external navigation). */
+  onViewStateReady?: (viewState: unknown) => void;
 }

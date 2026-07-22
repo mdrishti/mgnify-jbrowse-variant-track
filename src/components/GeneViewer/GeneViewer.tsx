@@ -245,6 +245,10 @@ export default function GeneViewer(props: GeneViewerProps) {
     initReady,
   );
 
+  useEffect(() => {
+    if (viewState) props.onViewStateReady?.(viewState);
+  }, [viewState]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useGeneViewerZoom(viewState, props, initialZoomAppliedRef);
 
   useGeneViewerClickHandler({
