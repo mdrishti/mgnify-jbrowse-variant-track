@@ -12,6 +12,7 @@
 import "@fontsource/roboto";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import MVIKGQueryGraph from "./MVIKGQueryGraph";
+import ContributeDataPanel from "./ContributeDataPanel";
 
 const QLEVER_ENDPOINT =
   (import.meta.env.VITE_QLEVER_ENDPOINT as string) || "http://localhost:7035";
@@ -595,6 +596,7 @@ export default function MVIKGQueryBuilder() {
     vars: string[];
     rows: Record<string, { type: string; value: string }>[];
   } | null>(null);
+  const [showContribute, setShowContribute] = useState(false);
 
   const template = TEMPLATES.find((t) => t.id === templateId)!;
 
@@ -668,7 +670,33 @@ export default function MVIKGQueryBuilder() {
         maxWidth: 1400,
       }}
     >
-      <h2 style={{ marginTop: 0 }}>MVIKG Query Builder</h2>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>MVIKG Query Builder</h2>
+        <button
+          onClick={() => setShowContribute(true)}
+          style={{
+            padding: "8px 16px",
+            background: "#7c3aed",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            cursor: "pointer",
+            fontWeight: 600,
+            fontSize: 13,
+          }}
+        >
+          + Contribute data
+        </button>
+      </div>
+      {showContribute && (
+        <ContributeDataPanel onClose={() => setShowContribute(false)} />
+      )}
 
       {/* ── Three-panel top row ── */}
       <div
