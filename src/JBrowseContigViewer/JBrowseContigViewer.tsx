@@ -5,7 +5,7 @@ import "@fontsource/roboto";
 import { getAssembly2 } from "./assembly";
 import getDefaultSessionConfig from "./defaultSessionConfig";
 import getTracks from "./tracks";
-import type { GenomeMeta } from "./types";
+import type { AnnotationTrack, GenomeMeta } from "./types";
 
 type ViewModel = ReturnType<typeof createViewState>;
 
@@ -15,18 +15,15 @@ export interface JBrowseContigViewerProps {
     fasta: string;
     fai: string;
     gzi: string;
-    gff: string;
-    csi: string;
-    /** Optional trix text search indexes */
-    ix?: string;
-    ixx?: string;
-    meta?: string;
   };
+  /** One entry per labeled annotation source (gene models, AMR, BGCs, ...) */
+  annotationTracks: AnnotationTrack[];
 }
 
 const JBrowseContigViewer: React.FC<JBrowseContigViewerProps> = ({
   genomeMeta,
   fileLocations,
+  annotationTracks,
 }) => {
   const [viewState, setViewState] = useState<ViewModel | null>(null);
   const assembly = useMemo(
@@ -34,8 +31,8 @@ const JBrowseContigViewer: React.FC<JBrowseContigViewerProps> = ({
     [genomeMeta, fileLocations],
   );
   const tracks = useMemo(
-    () => getTracks(genomeMeta, fileLocations),
-    [genomeMeta, fileLocations],
+    () => getTracks(genomeMeta, annotationTracks),
+    [genomeMeta, annotationTracks],
   );
   const sessionConfig = useMemo(
     () => getDefaultSessionConfig(genomeMeta, assembly, tracks),

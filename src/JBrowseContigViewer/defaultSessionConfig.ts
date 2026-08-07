@@ -39,19 +39,19 @@ const getDefaultSessionConfig = (
               },
             ],
           },
-          {
+          ...tracks.map((t) => ({
             type: "FeatureTrack",
-            configuration: "structural_annotation",
+            configuration: t.trackId,
             displays: [
               {
-                id: "structural_annotation-LinearBasicDisplay",
+                id: `${t.trackId}-LinearBasicDisplay`,
                 type: "LinearBasicDisplay",
                 rendererTypeName: "SvgFeatureRenderer",
                 renderer: { type: "SvgFeatureRenderer" },
                 height: 280,
               },
             ],
-          },
+          })),
         ],
       },
     ],

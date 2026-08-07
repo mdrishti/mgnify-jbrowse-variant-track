@@ -9,14 +9,21 @@ import { VariantOnlyViewer } from "./MVIKGViewer";
 // Manifest types
 // ---------------------------------------------------------------------------
 
+interface ManifestAnnotationTrack {
+  id: string;
+  label: string;
+  category: string[];
+  gffGz: string;
+  gffTbi: string;
+}
+
 interface ManifestEntry {
   vcfGz: string | null;
   tbi: string | null;
   fastaGz: string | null;
   fai: string | null;
   gzi: string | null;
-  gffGz: string | null;
-  gffTbi: string | null;
+  annotationTracks?: ManifestAnnotationTrack[];
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +298,8 @@ PREFIX biolink: <https://w3id.org/biolink/vocab/>
 PREFIX mvikg:   <https://w3id.org/mvikg#>
 
 SELECT DISTINCT ?start ?stop ?svTypeName ?effect WHERE {
-  ?taxon rdfs:label "${displayName}" .
+  ?taxon rdfs:label ?label .
+  FILTER(REPLACE(STR(?label), "_", " ") = "${displayName}")
   ?taxon dcterms:identifier ?contig .
   FILTER(STR(?contig) = "${accession}")
   ?taxon sosa:hasFeatureOfInterest ?geneNode .
@@ -480,8 +488,7 @@ function FullViewer({
   fastaUrl,
   faiUrl,
   gziUrl,
-  gffUrl,
-  csiUrl,
+  annotationTracks,
   vcfUrl,
   tbiUrl,
   displayName,
@@ -492,8 +499,7 @@ function FullViewer({
   fastaUrl: string;
   faiUrl: string;
   gziUrl: string;
-  gffUrl: string;
-  csiUrl: string;
+  annotationTracks: ManifestAnnotationTrack[];
   vcfUrl: string;
   tbiUrl: string;
   displayName: string;
@@ -525,27 +531,28 @@ function FullViewer({
             },
           ],
           tracks: [
-            {
+            ...annotationTracks.map((t) => ({
               type: "FeatureTrack",
-              trackId: "gene_features",
-              name: "Gene annotations",
+              trackId: t.id,
+              name: t.label,
               assemblyNames: [organism],
+              category: t.category,
               adapter: {
                 type: "Gff3TabixAdapter",
-                gffGzLocation: { uri: gffUrl },
+                gffGzLocation: { uri: t.gffGz },
                 index: {
                   indexType: "CSI",
-                  location: { uri: csiUrl },
+                  location: { uri: t.gffTbi },
                 },
               },
               displays: [
                 {
-                  displayId: "gene_features-LinearBasicDisplay",
+                  displayId: `${t.id}-LinearBasicDisplay`,
                   type: "LinearBasicDisplay",
-                  height: 200,
+                  height: 70,
                 },
               ],
-            },
+            })),
             {
               type: "VariantTrack",
               trackId: "variants",
@@ -560,7 +567,7 @@ function FullViewer({
                 {
                   displayId: "variants-LinearVariantDisplay",
                   type: "LinearVariantDisplay",
-                  height: 150,
+                  height: 60,
                 },
               ],
             },
@@ -586,22 +593,22 @@ function FullViewer({
                       {
                         id: "ref-seq-display",
                         type: "LinearReferenceSequenceDisplay",
-                        height: 100,
+                        height: 40,
                       },
                     ],
                   },
-                  {
-                    id: "gene_features",
+                  ...annotationTracks.map((t) => ({
+                    id: t.id,
                     type: "FeatureTrack",
-                    configuration: "gene_features",
+                    configuration: t.id,
                     displays: [
                       {
-                        displayId: "gene_features-LinearBasicDisplay",
+                        displayId: `${t.id}-LinearBasicDisplay`,
                         type: "LinearBasicDisplay",
-                        height: 200,
+                        height: 70,
                       },
                     ],
-                  },
+                  })),
                   {
                     id: "variants",
                     type: "VariantTrack",
@@ -610,7 +617,7 @@ function FullViewer({
                       {
                         displayId: "variants-LinearVariantDisplay",
                         type: "LinearVariantDisplay",
-                        height: 150,
+                        height: 60,
                       },
                     ],
                   },
@@ -631,8 +638,7 @@ function FullViewer({
     fastaUrl,
     faiUrl,
     gziUrl,
-    gffUrl,
-    csiUrl,
+    annotationTracks,
     vcfUrl,
     tbiUrl,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -700,15 +706,14 @@ function StrainViewer({
   }, [viewState]);
 
   const viewer =
-    entry.gffGz && entry.gffTbi ? (
+    entry.annotationTracks && entry.annotationTracks.length > 0 ? (
       <FullViewer
         organism={organism}
         accession={accession}
         fastaUrl={entry.fastaGz!}
         faiUrl={entry.fai!}
         gziUrl={entry.gzi!}
-        gffUrl={entry.gffGz}
-        csiUrl={entry.gffTbi}
+        annotationTracks={entry.annotationTracks}
         vcfUrl={entry.vcfGz ?? ""}
         tbiUrl={entry.tbi ?? ""}
         displayName={displayName}

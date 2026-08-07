@@ -1,55 +1,49 @@
-import type { GenomeMeta } from "./types";
+import type { AnnotationTrack, GenomeMeta } from "./types";
 
 const getTracks = (
   genomeMeta: GenomeMeta,
-  fileLocations: {
-    gff: string;
-    csi: string;
-    ix?: string;
-    ixx?: string;
-    meta?: string;
-  },
-) => {
-  const { gff, csi, ix, ixx, meta } = fileLocations;
-  const track: any = {
-    type: "FeatureTrack",
-    trackId: "structural_annotation",
-    name: "structural_annotation",
-    assemblyNames: [genomeMeta.assembly_name],
-    category: ["Annotations"],
-    adapter: {
-      type: "Gff3TabixAdapter",
-      gffGzLocation: { uri: gff },
-      index: {
-        indexType: "CSI" as const,
-        location: { uri: csi },
+  annotationTracks: AnnotationTrack[],
+) =>
+  annotationTracks.map((t) => {
+    const track: any = {
+      type: "FeatureTrack",
+      trackId: t.id,
+      name: t.label,
+      assemblyNames: [genomeMeta.assembly_name],
+      category: t.category,
+      adapter: {
+        type: "Gff3TabixAdapter",
+        gffGzLocation: { uri: t.gffUrl },
+        index: {
+          indexType: "CSI" as const,
+          location: { uri: t.csiUrl },
+        },
       },
-    },
-    displays: [
-      {
-        displayId: "customTrack-LinearBasicDisplay",
-        type: "LinearBasicDisplay",
-        rendererTypeName: "SvgFeatureRenderer",
-        renderer: { type: "SvgFeatureRenderer" },
-        height: 280,
-      },
-    ],
-    visible: true,
-  };
-  if (ix && ixx) {
-    track.textSearching = {
-      textSearchAdapter: {
-        type: "TrixTextSearchAdapter",
-        textSearchAdapterId: "gff3tabix_genes-index",
-        trackId: "structural_annotation",
-        ixFilePath: { uri: ix },
-        ixxFilePath: { uri: ixx },
-        ...(meta ? { metaFilePath: { uri: meta } } : {}),
-        assemblyNames: [genomeMeta.assembly_name],
-      },
+      displays: [
+        {
+          displayId: `${t.id}-LinearBasicDisplay`,
+          type: "LinearBasicDisplay",
+          rendererTypeName: "SvgFeatureRenderer",
+          renderer: { type: "SvgFeatureRenderer" },
+          height: 280,
+        },
+      ],
+      visible: true,
     };
-  }
-  return [track];
-};
+    if (t.ixUrl && t.ixxUrl) {
+      track.textSearching = {
+        textSearchAdapter: {
+          type: "TrixTextSearchAdapter",
+          textSearchAdapterId: `${t.id}-index`,
+          trackId: t.id,
+          ixFilePath: { uri: t.ixUrl },
+          ixxFilePath: { uri: t.ixxUrl },
+          ...(t.metaUrl ? { metaFilePath: { uri: t.metaUrl } } : {}),
+          assemblyNames: [genomeMeta.assembly_name],
+        },
+      };
+    }
+    return track;
+  });
 
 export default getTracks;
